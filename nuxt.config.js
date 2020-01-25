@@ -23,7 +23,8 @@ export default {
   ** Global CSS
   */
   css: [
-    // '~assets/scss/pachira.scss',
+    '~assets/scss/main.scss',
+    'material-icons/iconfont/material-icons.css',
     // '~assets/scss/webfonts.scss'
   ],
   /*
@@ -31,6 +32,7 @@ export default {
   */
   plugins: [
     { src: '~plugins/veeValidate.js', ssr: false },
+    { src: '~plugins/vuesax.js', ssr: false },
   ],
   /*
   ** Nuxt.js dev-modules
@@ -78,7 +80,7 @@ export default {
   */
   styleResources: {
     scss: [
-      // '~/assets/scss/no-compile/_variables-mixins-functions.scss',
+      '~/assets/scss/non-compiling/_non-compiling.scss',
     ]
   },
 

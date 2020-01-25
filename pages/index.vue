@@ -1,10 +1,30 @@
 <template>
-  <div class="auth-page-cont">
-    <h1>Auth</h1>
-    <div id="firebaseui-auth-container"></div>
-    <div id="loader">Loading...</div>
-  </div>  
+  <div id="auth-page-wrapper">
+    <vs-card id="auth-card">
+      <div id="auth-card-header" slot="header">
+        Sign In
+      </div>
+      <div id="logo-cont">
+        <div id="logo">
+          DIG hub
+        </div>
+      </div>
+      <div id="input-cont">
+        <div id="input-cont-inner">
+          <vs-input class="input" icon-no-border icon="email" placeholder="Email" type="email" v-model="Input.email"/>
+          <vs-input class="input" icon-no-border icon="lock" placeholder="Password" type="password" v-model="Input.password"/>
+          <vs-checkbox class="check check-mini remember-me" v-model="Options.rememberMe">Keep me signed in</vs-checkbox>
+          <vs-button id="sign-in-btn" class="full-width-button" type="relief">Sign in</vs-button>
+          <a class="forgot-password" href="">Forgot password?</a>
+          <div id="bottom">
+            Need an account? <a href="">Sign up</a>
+          </div>
+        </div>
+      </div>
+    </vs-card>
+  </div>
 </template>
+
 
 <script>
 import {mapGetters} from 'vuex'
@@ -18,7 +38,14 @@ export default {
   },
   data() {
     return {
-      FirebaseUIInit: false
+      FirebaseUIInit: false,
+      Input: {
+        email: '',
+        password: ''
+      },
+      Options: {
+        rememberMe: false
+      }
     };
   }, /*
   watch: {
@@ -34,50 +61,11 @@ export default {
     }),
   },
   methods: {
-    FirebaseUI() {
-      this.FirebaseUIInit = true
-      const firebaseui = require('firebaseui')
-
-      // FIREBASE-UI INIT
-      const ui = new firebaseui.auth.AuthUI(firebase.auth())
-
-      // FIREBASE-UI CONFIG
-      const uiConfig = {
-        callbacks: {
-          signInSuccessWithAuthResult: function(authResult, redirectUrl) {
-            // User successfully signed in.
-            // Return type determines whether we continue the redirect automatically
-            // or whether we leave that to developer to handle.
-            console.log(true);
-            return true;
-          },
-          uiShown: function() {
-            // The widget is rendered.
-            // Hide the loader.
-            document.getElementById('loader').style.display = 'none';
-          }
-        },
-        // Will use popup for IDP Providers sign-in flow instead of the default, redirect.
-        signInFlow: 'popup',
-        signInSuccessUrl: '/',
-        signInOptions: [
-          // Leave the lines as is for the providers you want to offer your users.
-          firebase.auth.EmailAuthProvider.PROVIDER_ID,
-        ],
-        // Terms of service url.
-        tosUrl: '/legal',
-        // Privacy policy url.
-        privacyPolicyUrl: '/legal'
-      }
-
-      // FIREBASE-UI START
-      ui.start('#firebaseui-auth-container', uiConfig)
-    }
   },
   mounted() {
     setTimeout(() => {
       if (this.GetFirebaseInit) {
-        this.FirebaseUI()
+        // this.FirebaseUI()
       } else {
         console.log('nope');
       }
@@ -87,35 +75,77 @@ export default {
 }
 </script>
 
-<style>
-.container {
-  margin: 0 auto;
-  min-height: 100vh;
+
+<style scoped lang="scss">
+
+#auth-page-wrapper {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#auth-card {
+  width: 24rem;
+  height: auto;
+}
+
+#auth-card-header {
+  color: material-color('blue-grey', '300');
+}
+
+#logo-cont {
   display: flex;
   justify-content: center;
+  margin: 4rem 0;
+}
+
+#logo {
+  font-size: 2rem;
+  color: material-color('blue-grey', '200');
+}
+
+#input-cont, #input-cont-inner {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  text-align: center;
 }
 
-.title {
-  font-family: 'Quicksand', 'Source Sans Pro', -apple-system, BlinkMacSystemFont,
-    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  display: block;
-  font-weight: 300;
-  font-size: 100px;
-  color: #35495e;
-  letter-spacing: 1px;
+.input:not(last-child) {
+  margin-bottom: 1rem;
 }
 
-.subtitle {
-  font-weight: 300;
-  font-size: 42px;
-  color: #526488;
-  word-spacing: 5px;
-  padding-bottom: 15px;
+.check.remember-me {
+  align-self: flex-start;
+  color: material-color('blue-grey', '300');
 }
 
-.links {
-  padding-top: 15px;
+.forgot-password {
+  align-self: flex-end;
+  color: $primary;
 }
+
+.check.remember-me, .forgot-password {
+  font-size: .75rem;
+}
+
+#sign-in-btn {
+  margin: 2rem 0 .5rem;
+}
+
+#bottom {
+  margin-top: 4rem;
+  color: material-color('blue-grey', '300');
+}
+
+#bottom a {
+  color: material-color('blue-grey', '500');
+}
+
+</style>
+
+
+<style lang="scss">
+
 </style>
