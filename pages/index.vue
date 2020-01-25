@@ -11,13 +11,13 @@
       </div>
       <div id="input-cont">
         <div id="input-cont-inner">
-          <vs-input class="input" icon-no-border icon="email" placeholder="Email" type="email" v-model="Input.email"/>
-          <vs-input class="input" icon-no-border icon="lock" placeholder="Password" type="password" v-model="Input.password"/>
-          <vs-checkbox class="check check-mini remember-me" v-model="Options.rememberMe">Keep me signed in</vs-checkbox>
-          <vs-button id="sign-in-btn" class="full-width-button" type="relief">Sign in</vs-button>
+          <vs-input class="input" icon-no-border icon="email" placeholder="Email" type="email" v-model="Input.Email"/>
+          <vs-input class="input" icon-no-border icon="lock" placeholder="Password" type="password" v-model="Input.Password"/>
+          <!-- <vs-checkbox class="check check-mini remember-me" v-model="Options.RememberMe">Keep me signed in</vs-checkbox> -->
           <a class="forgot-password" href="">Forgot password?</a>
+          <vs-button id="sign-in-btn" class="full-width-button" type="relief" @click="SignIn()">Sign in</vs-button>
           <div id="bottom">
-            Need an account? <a href="">Sign up</a>
+            Need an account? <a @click="SignUpMode()">Sign up</a>
           </div>
         </div>
       </div>
@@ -39,12 +39,13 @@ export default {
   data() {
     return {
       FirebaseUIInit: false,
+      Mode: 'signin',
       Input: {
-        email: '',
-        password: ''
+        Email: '',
+        Password: ''
       },
       Options: {
-        rememberMe: false
+        RememberMe: false
       }
     };
   }, /*
@@ -61,6 +62,20 @@ export default {
     }),
   },
   methods: {
+    SignIn() {
+      console.log('SignIn()');
+      
+      firebase.auth().signInWithEmailAndPassword(this.Input.Email, this.Input.Password)
+      .catch(function(error) {
+        // Handle Errors here.
+        var errorCode = error.code;
+        var errorMessage = error.message;
+        // ...
+      });
+    },
+    SignUpMode() {
+      this.Mode = 'signup'
+    }
   },
   mounted() {
     setTimeout(() => {
@@ -70,6 +85,25 @@ export default {
         console.log('nope');
       }
     }, 5000);
+
+    firebase.auth().onAuthStateChanged(function(user) {
+    if (user) {
+      // User is signed in.
+      console.log('signed in!');
+      var displayName = user.displayName;
+      var email = user.email;
+      var emailVerified = user.emailVerified;
+      var photoURL = user.photoURL;
+      var isAnonymous = user.isAnonymous;
+      var uid = user.uid;
+      var providerData = user.providerData;
+      // ...
+    } else {
+      console.log('not signed in.');
+      // User is signed out.
+      // ...
+    }
+  });
 
   }
 }
@@ -87,7 +121,8 @@ export default {
 }
 
 #auth-card {
-  width: 24rem;
+  width: 22rem;
+  max-width: 100%;
   height: auto;
 }
 
@@ -112,7 +147,7 @@ export default {
   align-items: center;
 }
 
-.input:not(last-child) {
+.input {
   margin-bottom: 1rem;
 }
 
@@ -123,6 +158,7 @@ export default {
 
 .forgot-password {
   align-self: flex-end;
+  margin-top: -.5rem;
   color: $primary;
 }
 
@@ -131,7 +167,7 @@ export default {
 }
 
 #sign-in-btn {
-  margin: 2rem 0 .5rem;
+  margin: 2.5rem 0 .5rem;
 }
 
 #bottom {
