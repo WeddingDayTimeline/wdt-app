@@ -1,8 +1,9 @@
 <template>
   <div id="auth-page-wrapper">
-    <vs-card id="auth-card">
+    <vs-progress class="progress" v-if="!Loaded || Thinking" indeterminate :height="3" color="primary"></vs-progress>
+    <vs-card v-if="GetFirebaseInit" id="auth-card" :class="Loaded ? '' : 'loading'">
       <div id="auth-card-header" slot="header">
-        Sign In
+        {{ SignInMode ? 'Sign In' : 'Sign Up' }}
       </div>
       <div id="logo-cont">
         <div id="logo">
@@ -11,13 +12,21 @@
       </div>
       <div id="input-cont">
         <div id="input-cont-inner">
-          <vs-input class="input" icon-no-border icon="email" placeholder="Email" type="email" v-model="Input.Email"/>
-          <vs-input class="input" icon-no-border icon="lock" placeholder="Password" type="password" v-model="Input.Password"/>
-          <!-- <vs-checkbox class="check check-mini remember-me" v-model="Options.RememberMe">Keep me signed in</vs-checkbox> -->
-          <a class="forgot-password" href="">Forgot password?</a>
-          <vs-button id="sign-in-btn" class="full-width-button" type="relief" @click="SignIn()">Sign in</vs-button>
+          <vs-input class="input" icon-no-border icon="email" :placeholder="SignInMode ? 'Email' : 'Your Email'" type="email" v-model="Input.Email"/>
+          <vs-input class="input" icon-no-border icon="lock" :placeholder="SignInMode ? 'Password' : 'Create a password'" type="password" v-model="Input.Password"/>
+          <a class="forgot forgot-password" :class="!SignInMode || Error.Active ? 'no-click' : ''" @click="ForgotPassword()">Forgot password?</a>
+          <vs-alert v-if="Error.Active" class="error" active="true" color="danger" icon="erroroutline" >
+            {{ Error.Text }}
+            <span v-if="Error.Type === 0">
+              <br>
+              <a class="forgot" @click="ForgotEmail()">Forgot your email?</a><br>
+              <a class="forgot" @click="ForgotPassword()">Forgot your password?</a>
+            </span>
+          </vs-alert>
+          <vs-button v-if="SignInMode" id="sign-in-up-btn" class="full-width-button" type="relief" @click="SignIn()">Sign in</vs-button>
+          <vs-button v-if="!SignInMode" id="sign-in-up-btn" class="full-width-button" type="relief" @click="SignUp()">Create Account</vs-button>
           <div id="bottom">
-            Need an account? <a @click="SignUpMode()">Sign up</a>
+            {{ SignInMode ? 'Need an account? ' : 'Have an account? ' }}<a :class="SignInMode ? '' : 'primary'" @click="SignUpMode()">{{ SignInMode ? 'Sign up' : 'Sign in' }}</a>
           </div>
         </div>
       </div>
@@ -27,6 +36,7 @@
 
 
 <script>
+import onAuthStateChanged from '~/mixins/onAuthStateChanged.js'    //? MUST BE IMPORTED ON EVERY PAGE, THEN DECLARED AS MIXIN.
 import {mapGetters} from 'vuex'
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
@@ -36,74 +46,104 @@ export default {
   components: {
     Logo
   },
+  mixins: [ onAuthStateChanged ],
   data() {
     return {
+      Loaded: false,
+      Thinking: false,
       FirebaseUIInit: false,
-      Mode: 'signin',
+      SignInMode: true,
       Input: {
         Email: '',
         Password: ''
       },
       Options: {
         RememberMe: false
+      },
+      Error: {
+        Active: false,
+        Type: 0,
+        Text: '',
       }
     };
-  }, /*
+  },
   watch: {
     GetFirebaseInit: function () {
-      if (!this.FirebaseUIInit && this.GetFirebaseInit) {
-        this.FirebaseUI()
+      if (this.GetFirebaseInit) {
+        this.Loaded = true;
       }
+    },
+    GetAuthState: function () {
+      this.Thinking = false;
     }
-  }, */
+  },
   computed: {
     ...mapGetters({
-      GetFirebaseInit: 'getFirebaseInit'
+      GetFirebaseInit: 'getFirebaseInit',
+      GetAuthState: 'getAuthState'
     }),
   },
   methods: {
     SignIn() {
       console.log('SignIn()');
+      let vm = this;
       
+      this.Thinking = true;
       firebase.auth().signInWithEmailAndPassword(this.Input.Email, this.Input.Password)
       .catch(function(error) {
         // Handle Errors here.
-        var errorCode = error.code;
-        var errorMessage = error.message;
+        const errorCode = error.code;
+        const errorMessage = error.message;
+
+        vm.Thinking = false;
+
+        if (errorCode === 'auth/wrong-password' || errorCode === 'auth/user-not-found' || errorCode === 'auth/user-disabled') {
+          vm.Error = { Active: true, Type: 0, Text: 'Incorrect email or password.' }
+        } else if (errorCode === 'auth/invalid-email') {
+          vm.Error = { Active: true, Type: 1, Text: 'This seems to be an invalid email. Please try again.' }
+        }
+        // ...
+      });
+    },
+    SignUp() {
+      console.log('SignUp()');
+      this.Thinking = true;
+      let vm = this;
+      
+      firebase.auth().createUserWithEmailAndPassword(vm.Input.Email, vm.Input.Password)
+      .catch(function(error) {
+        // Handle Errors here.
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        vm.Thinking = false;
         // ...
       });
     },
     SignUpMode() {
-      this.Mode = 'signup'
-    }
+      this.Input.Email = '';
+      this.Input.Password = '';
+
+      if (this.SignInMode) {
+        this.SignInMode = false;
+        this.Error.Active ? this.Error.Active = false : null
+      } else {
+        this.SignInMode = true
+      }
+    },
+    ForgotPassword() {
+
+    },
+    ForgotEmail() {
+
+    }, 
   },
   mounted() {
-    setTimeout(() => {
-      if (this.GetFirebaseInit) {
-        // this.FirebaseUI()
-      } else {
-        console.log('nope');
-      }
-    }, 5000);
 
-    firebase.auth().onAuthStateChanged(function(user) {
-    if (user) {
-      // User is signed in.
-      console.log('signed in!');
-      var displayName = user.displayName;
-      var email = user.email;
-      var emailVerified = user.emailVerified;
-      var photoURL = user.photoURL;
-      var isAnonymous = user.isAnonymous;
-      var uid = user.uid;
-      var providerData = user.providerData;
-      // ...
-    } else {
-      console.log('not signed in.');
-      // User is signed out.
-      // ...
+    if (this.GetFirebaseInit) {
+      this.Loaded = true;
     }
-  });
+
+    // firebase.auth().signOut()
 
   }
 }
@@ -116,8 +156,18 @@ export default {
   width: 100%;
   height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+.progress {
+  width: calc(22rem - .5rem);
+  margin-bottom: -3px;
+}
+
+.loading #auth-card-header, .loading #input-cont, .loading #input-cont * {
+  opacity: 0;
 }
 
 #auth-card {
@@ -156,6 +206,10 @@ export default {
   color: material-color('blue-grey', '300');
 }
 
+.forgot {
+  cursor: pointer;
+}
+
 .forgot-password {
   align-self: flex-end;
   margin-top: -.5rem;
@@ -166,7 +220,7 @@ export default {
   font-size: .75rem;
 }
 
-#sign-in-btn {
+#sign-in-up-btn {
   margin: 2.5rem 0 .5rem;
 }
 
@@ -177,7 +231,21 @@ export default {
 
 #bottom a {
   color: material-color('blue-grey', '500');
+  cursor: pointer;
 }
+
+#bottom a.primary, .error span {
+  color: $primary;
+}
+
+.error {
+  height: min-content;
+}
+
+.error * {
+  line-height: 1.333rem;
+}
+
 
 </style>
 
