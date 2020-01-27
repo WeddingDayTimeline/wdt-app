@@ -33,6 +33,7 @@ export default {
   plugins: [
     { src: '~plugins/veeValidate.js', ssr: false },
     { src: '~plugins/vuesax.js', ssr: false },
+    { src: '~plugins/vueGlobalEvents.js', ssr: false },
   ],
   /*
   ** Nuxt.js dev-modules
