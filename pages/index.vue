@@ -1,7 +1,7 @@
 <template>
   <div id="auth-page-wrapper">
-    <vs-progress class="progress" v-if="!Loaded || Thinking" indeterminate :height="3" color="primary"></vs-progress>
-    <vs-card v-if="GetFirebaseInit" id="auth-card" :class="Loaded ? '' : 'loading'">
+    <vs-progress class="progress" v-if="Loading || Thinking" indeterminate :height="3" color="primary"></vs-progress>
+    <vs-card id="auth-card">
       <div v-if="!ForgotMode" id="auth-card-header" slot="header">
         {{ SignInMode ? 'Sign In' : 'Sign Up' }}
       </div>
@@ -13,11 +13,12 @@
           DIG hub
         </div>
       </div>
-      <div id="input-cont">
+      <div id="input-cont" :class="Loading ? 'hide' : ''">
         <div id="input-cont-inner">
-          <vs-input class="input" icon-no-border icon="email" :placeholder="SignInMode ? 'Email' : 'Choose an email'" type="email" v-model="Input.Email"/>
+          <vs-input class="input" icon-no-border icon="email" :placeholder="SignInMode ? 'Email' : 'Choose an email'" type="email" v-model="Input.Email" autofocus="true" :readonly="DisableFields"/>
           <p v-if="ForgotMode && !ResetPasswordBtnClicked" class="reset-instructions">Please enter the email associated with your account.</p>
-          <vs-input :class="ForgotMode ? 'no-click hide' : ''" class="input" icon-no-border icon="lock" :placeholder="SignInMode ? 'Password' : 'Create a password'" type="password" v-model="Input.Password"/>
+          <p v-if="ForgotMode && ResetPasswordBtnClicked" class="reset-instructions">Success! Please check your email for your password reset link.</p>
+          <vs-input :class="ForgotMode ? 'no-click hide' : ''" class="input" icon-no-border icon="lock" :placeholder="SignInMode ? 'Password' : 'Create a password'" type="password" v-model="Input.Password" :readonly="DisableFields"/>
           <a class="forgot forgot-password" :class="!SignInMode || Error.Active || ForgotMode ? 'no-click hide' : ''" @click="ForgotPassword()">Forgot password?</a>
           <vs-alert v-if="Error.Active" class="error" active="true" color="danger" icon="erroroutline" >
             {{ Error.Text }}
@@ -28,9 +29,12 @@
           </vs-alert>
           <vs-button v-if="SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="SignIn()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">Sign in</vs-button>
           <vs-button v-if="!SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="SignUp()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">Create Account</vs-button>
-          <vs-button v-if="ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="ResetPassword()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">Reset Password</vs-button>
-          <div id="bottom">
+          <vs-button v-if="ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="ResetPassword()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor !== 'success' ? 'Reset Password' : 'Email Sent' }}</vs-button>
+          <div v-if="!PasswordResetEmailSent" id="bottom">
             {{ SignInMode ? 'Need an account? ' : 'Have an account? ' }}<a :class="SignInMode ? '' : 'primary'" @click="SignUpMode()">{{ SignInMode ? 'Sign up' : 'Sign in' }}</a>
+          </div>
+          <div v-else id="bottom">
+            <a class="primary" @click="SignUpMode('signIn')">Sign in</a>
           </div>
         </div>
       </div>
@@ -41,20 +45,19 @@
 
 
 <script>
-import onAuthStateChanged from '~/mixins/onAuthStateChanged.js'    //? MUST BE IMPORTED ON EVERY PAGE, THEN DECLARED AS MIXIN.
 import {mapGetters} from 'vuex'
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
 import Logo from '~/components/Logo.vue'
 
 export default {
+  name: 'auth',
   components: {
     Logo
   },
-  mixins: [ onAuthStateChanged ],
   data() {
     return {
-      Loaded: false,
+      Loading: true,
       Thinking: false,
       FirebaseUIInit: false,
       SignInMode: true,
@@ -73,23 +76,14 @@ export default {
       },
       SubmitBtnColor: 'primary',
       SubmitBtnDisabled: false,
-      ResetPasswordBtnClicked: false
+      ResetPasswordBtnClicked: false,
+      PasswordResetEmailSent: false,
+      DisableFields: false
     };
-  },
-  watch: {
-    GetFirebaseInit: function () {
-      if (this.GetFirebaseInit) {
-        this.Loaded = true;
-      }
-    },
-    GetAuthState: function () {
-      this.Thinking = false;
-    }
   },
   computed: {
     ...mapGetters({
-      GetFirebaseInit: 'getFirebaseInit',
-      GetAuthState: 'getAuthState'
+      // GetFirebaseInit: 'getFirebaseInit',
     })
   },
   methods: {
@@ -99,12 +93,14 @@ export default {
       
       this.Thinking = true;
       this.SubmitBtnDisabled = true;
+      this.DisableFields = true;
       this.Error.Active ? this.Error.Active = false : null;
       firebase.auth().signInWithEmailAndPassword(this.Input.Email, this.Input.Password)
       .then(function(response) {
         vm.SubmitBtnColor = 'success';
         vm.SubmitBtnDisabled = false;
         vm.Thinking = false;
+        vm.GoodToGo()
       })
       .catch(function(error) {
         // Handle Errors here.
@@ -113,6 +109,7 @@ export default {
 
         vm.SubmitBtnTempColor('warning');
         vm.SubmitBtnDisabled = false;
+        vm.DisableFields = false;
         vm.Thinking = false;
 
         if (errorCode === 'auth/wrong-password' || errorCode === 'auth/user-not-found' || errorCode === 'auth/user-disabled') {
@@ -127,6 +124,7 @@ export default {
       console.log('SignUp()');
       this.Thinking = true;
       this.SubmitBtnDisabled = true;
+      this.DisableFields = true;
       this.Error.Active ? this.Error.Active = false : null;
       let vm = this;
       
@@ -136,10 +134,12 @@ export default {
         vm.SubmitBtnDisabled = false;
         vm.Thinking = false;
         vm.SubmitBtnColor = 'success';
+        vm.GoodToGo()
         // ...
       })
       .catch(function(error) {
         // Handle Errors here.
+        vm.DisableFields = false;
         const errorCode = error.code;
         const errorMessage = error.message;
         if (errorCode === 'auth/email-already-in-use') {
@@ -156,15 +156,21 @@ export default {
         // ...
       });
     },
-    SignUpMode() {
+    SignUpMode(toMode = null) {
       this.Input.Email = '';
       this.Input.Password = '';
 
-      if (this.SignInMode) {
-        this.SignInMode = false;
-      } else {
-        this.SignInMode = true
-      }
+      if (toMode === null) {
+        if (this.SignInMode) {
+          this.SignInMode = false;
+        } else {
+          this.SignInMode = true
+        }
+      } else if (toMode === 'signIn') {
+        this.SignInMode = true;
+        this.SubmitBtnColor = 'primary';
+        this.PasswordResetEmailSent = false;
+      } 
 
       this.ForgotMode = false;
       this.Error.Active ? this.Error.Active = false : null
@@ -179,6 +185,7 @@ export default {
       this.Thinking = true;
       this.ResetPasswordBtnClicked = true;
       this.SubmitBtnDisabled = true;
+      this.DisableFields = true;
       this.Error.Active ? this.Error.Active = false : null;
       let vm = this;
 
@@ -190,8 +197,10 @@ export default {
         vm.SubmitBtnColor = 'success';
         vm.SubmitBtnDisabled = false;
         vm.Thinking = false;
+        vm.PasswordResetEmailSent = true;
       }).catch(function(error) {
         // An error happened.
+        vm.DisableFields = false;
         const errorCode = error.code;
         const errorMessage = error.message;
         if (errorCode === 'auth/user-not-found') {
@@ -221,16 +230,24 @@ export default {
       } else if (this.ForgotMode) {
         this.ResetPassword()
       }
+    },
+    GoodToGo() {
+      console.log('----- Good to go!');
     }
   },
   mounted() {
-
-    if (this.GetFirebaseInit) {
-      this.Loaded = true;
-    }
-
-    // firebase.auth().signOut()
-
+    let vm = this;
+    firebase.auth().onAuthStateChanged(function(user) {
+        console.log('onAuthStateChanged()');
+        if (user) {
+          // User is signed in.
+          console.log('signed in!');
+          vm.$root.context.redirect('/dash')
+        } else {
+          // User is signed out.
+          vm.Loading = false
+        }
+    })
   }
 }
 </script>

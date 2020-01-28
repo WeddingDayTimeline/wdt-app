@@ -1,6 +1,6 @@
 
 export default {
-  mode: 'universal',
+  mode: 'spa',
   /*
   ** Headers of the page
   */
@@ -51,6 +51,13 @@ export default {
     '@nuxtjs/dotenv',
     '@nuxtjs/style-resources',
   ],
+
+  /*
+  ** Router & Middleware
+  */
+  router: {
+    middleware: 'auth'
+  },
 
   /*
   ** Server Middleware

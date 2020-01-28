@@ -8,3 +8,9 @@
     color: #fff0 !important;
     opacity: 0 !important;
 }
+
+// style change during html input elements' readonly state
+input:read-only {
+    background-color: material-color('blue-grey', '50');
+    color: material-color('blue-grey', '400');
+}

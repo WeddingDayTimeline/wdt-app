@@ -5,38 +5,18 @@
 </template>
 
 <script>
-import * as firebase from 'firebase/app'
-import dotenv from 'dotenv'
 
 export default {
   data() {
     return {
     };
-  },
-  created() {
-    // FIREBASE CONFIG AND INIT
-    if (!firebase.apps.length) {
-        const config = {
-            apiKey: process.env.FB_API_KEY,
-            authDomain: process.env.FB_AUTH_DOMAIN,
-            databaseURL: process.env.FB_DATABASE_URL,
-            projectId: process.env.FB_PROJECT_ID,
-            storageBucket: process.env.FB_STORAGE_BUCKET,
-            messagingSenderId: process.env.FB_MESSAGING_SENDER_ID,
-            appId: process.env.FB_APP_ID
-        }
-        console.log('config:', config);
-        firebase.initializeApp(config)
-        this.$store.commit('updateFirebaseInitState', true)
-        
-        // firebase.firestore().settings({cacheSizeBytes: 41943040})    //* KEEP cacheSizeBytes (the value is equal to or close to the default) AS A WORKAROUND TO A BUG, WHERE THE SETTINGS FUNCTION NEEDS ATLEAST ONE ARGUMENT
-    }
   }
 }
 </script>
 
 
-<style>
+<style lang="scss">
+
 html {
   font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI',
     Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -84,4 +64,6 @@ html {
   color: #fff;
   background-color: #35495e;
 }
+
 </style>
+

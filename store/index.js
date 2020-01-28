@@ -24,5 +24,5 @@ export const actions = {
 
 export const getters = {
   getFirebaseInit: state => state.firebaseInit,
-  getAuthState: state => state.authState,
+  getAuthState: state => state.authState
 }
