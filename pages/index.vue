@@ -13,7 +13,7 @@
           DIG hub
         </div>
       </div>
-      <div id="input-cont" :class="Loading ? 'hide' : ''">
+      <div id="input-cont" :class="Loading ? 'mostly-hidden' : ''">
         <div id="input-cont-inner">
           <vs-input class="input" icon-no-border icon="email" :placeholder="SignInMode ? 'Email' : 'Choose an email'" type="email" v-model="Input.Email" autofocus="true" :readonly="DisableFields"/>
           <p v-if="ForgotMode && !ResetPasswordBtnClicked" class="reset-instructions">Please enter the email associated with your account.</p>
@@ -30,6 +30,13 @@
           <vs-button v-if="SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="SignIn()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">Sign in</vs-button>
           <vs-button v-if="!SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="SignUp()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">Create Account</vs-button>
           <vs-button v-if="ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="ResetPassword()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor !== 'success' ? 'Reset Password' : 'Email Sent' }}</vs-button>
+          <div id="google-option-cont">
+            <div class="or-cont"><hr><span class="or">or</span><hr></div>
+            <vs-button v-if="!ForgotMode" class="google-signin-btn full-width-button" color="#4285F4" type="flat" :disabled="SubmitBtnDisabled">
+              <div class="google-logo"></div>
+              Sign in with Google
+            </vs-button>
+          </div>
           <div v-if="!PasswordResetEmailSent" id="bottom">
             {{ SignInMode ? 'Need an account? ' : 'Have an account? ' }}<a :class="SignInMode ? '' : 'primary'" @click="SignUpMode()">{{ SignInMode ? 'Sign up' : 'Sign in' }}</a>
           </div>
@@ -273,6 +280,10 @@ export default {
   opacity: 0;
 }
 
+.mostly-hidden {
+  opacity: .1;
+}
+
 #auth-card {
   width: 22rem;
   max-width: 100%;
@@ -281,6 +292,7 @@ export default {
 
 #auth-card-header {
   color: material-color('blue-grey', '300');
+  cursor: default;
 }
 
 #logo-cont {
@@ -292,6 +304,7 @@ export default {
 #logo {
   font-size: 2rem;
   color: material-color('blue-grey', '200');
+  cursor: default;
 }
 
 #input-cont, #input-cont-inner {
@@ -327,14 +340,48 @@ export default {
   margin: 2.5rem 0 .5rem;
 }
 
+#google-option-cont {
+  display: flex;
+  flex-direction: column;
+  width: auto;
+  margin: 1.2rem 0 0;
+}
+
+#google-option-cont .or-cont{
+  display: flex;
+  width: 200px;
+  margin: 0 0 .333rem;
+}
+
+#google-option-cont hr {
+  flex: 1;
+  background-color: transparent;
+  border-bottom: 1px solid material-color('blue-grey', '100');
+  border-top: none;
+  border-right: none;
+  border-left: none;
+}
+
+#google-option-cont .or{
+  margin: -.5rem .666rem 0;
+  color: material-color('blue-grey', '200');
+  cursor: default;
+}
+
 #bottom {
   margin-top: 4rem;
   color: material-color('blue-grey', '300');
+  cursor: default;
 }
 
 #bottom a {
-  color: material-color('blue-grey', '500');
+  margin: 0 0 0 .2rem;
+  color: material-color('blue-grey', '300');
   cursor: pointer;
+}
+
+#bottom a:hover {
+  color: $primary;
 }
 
 #bottom a.primary, .error span {

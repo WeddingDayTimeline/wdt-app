@@ -1,10 +1,16 @@
 
 // UI-COLORS
 // MUST ALIGN WITH VUE-SAX COLORS. IF CHANGING HERE, CHANGE ALSO IN vuesax.js VUE PLUGIN. SEE VUESAX DOCS > COLOR FOR CONFIG OPTIONS
-
 $primary: rgb(31,116,255);
 $danger: rgb(255,71,87);
 $success: rgb(70,201,58);
 $dark: rgb(30,30,30);
 $warning: rgb(255,186,0);
 $light: rgb(245,245,245);
+
+// PROJECT COLORS
+$white: #fff;
+
+// OTHER (KEEPERS)
+
+$google-blue:  #4285F4;

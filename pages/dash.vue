@@ -29,7 +29,9 @@ export default {
     })
   },
   mounted() {
-    
+    /* setTimeout(() => {
+      firebase.auth().signOut()
+    }, 2000) */
   }
 }
 </script>
