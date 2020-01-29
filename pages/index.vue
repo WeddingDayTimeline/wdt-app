@@ -32,7 +32,7 @@
           <vs-button v-if="ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="ResetPassword()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor !== 'success' ? 'Reset Password' : 'Email Sent' }}</vs-button>
           <div id="google-option-cont">
             <div class="or-cont"><hr><span class="or">or</span><hr></div>
-            <vs-button v-if="!ForgotMode" class="google-signin-btn full-width-button" color="#4285F4" type="flat" :disabled="SubmitBtnDisabled">
+            <vs-button v-if="!ForgotMode" class="google-signin-btn full-width-button" color="#4285F4" type="flat" @click="GoogleSignIn()" :disabled="SubmitBtnDisabled">
               <div class="google-logo"></div>
               Sign in with Google
             </vs-button>
@@ -136,12 +136,25 @@ export default {
       let vm = this;
       
       firebase.auth().createUserWithEmailAndPassword(vm.Input.Email, vm.Input.Password)
-      .then(function(response) {
-        vm.SubmitBtnColor = 'success';
-        vm.SubmitBtnDisabled = false;
-        vm.Thinking = false;
-        vm.SubmitBtnColor = 'success';
-        vm.GoodToGo()
+      .then(async function(response) {
+        console.log('--------- about to send');
+        await vm.NewUserFlow(response.user.email)
+        .then(function(res) {
+          console.log('res:', res);
+          console.log('----------got response');
+          if (res) {
+            vm.SubmitBtnColor = 'success';
+            vm.SubmitBtnDisabled = false;
+            vm.Thinking = false;
+            vm.SubmitBtnColor = 'success';
+            console.log('response:', response);
+            vm.GoodToGo()
+          }
+        })
+        .catch(function(err) {
+          console.log('err:', err);
+        })
+
         // ...
       })
       .catch(function(error) {
@@ -162,6 +175,32 @@ export default {
         vm.Thinking = false;
         // ...
       });
+    },
+    GoogleSignIn() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithRedirect(provider);
+    },
+    async NewUserFlow(email) {
+      try {
+        const post = await this.$axios({
+          method: 'post',
+          url: '/api/firebase/newUser',
+          params: {
+            app: 'dig-hub'
+          },
+          data: {
+            Email: email
+          }
+        });
+        if (post.data.success) {
+          return true
+        } else {
+          return false
+        }
+      } catch (error) {
+        console.error(error);
+        return false
+      }
     },
     SignUpMode(toMode = null) {
       this.Input.Email = '';
@@ -248,7 +287,22 @@ export default {
         console.log('onAuthStateChanged()');
         if (user) {
           // User is signed in.
+          let displayName = user.displayName;
+          let email = user.email;
+          let emailVerified = user.emailVerified;
+          let photoURL = user.photoURL;
+          let isAnonymous = user.isAnonymous;
+          let uid = user.uid;
+          let providerData = user.providerData;
+          console.log('displayName:', displayName);
+          console.log('email:', email);
+          console.log('emailVerified:', emailVerified);
+          console.log('photoURL:', photoURL);
+          console.log('isAnonymous:', isAnonymous);
+          console.log('uid:', uid);
+          console.log('providerData:', providerData);
           console.log('signed in!');
+          console.log('user:', user);
           vm.$root.context.redirect('/dash')
         } else {
           // User is signed out.

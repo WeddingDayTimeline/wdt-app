@@ -1,6 +1,7 @@
 <template>
   <div id="dash-page-wrapper">
-      stuff
+      stuff<br>
+      <button @click="LogOut()">Log out</button>
   </div>
 </template>
 
@@ -28,10 +29,14 @@ export default {
       // GetFirebaseInit: 'getFirebaseInit',
     })
   },
+  methods: {
+      LogOut() {
+        setTimeout(() => {
+            firebase.auth().signOut()
+        }, 2000)
+      }
+  },
   mounted() {
-    /* setTimeout(() => {
-      firebase.auth().signOut()
-    }, 2000) */
   }
 }
 </script>

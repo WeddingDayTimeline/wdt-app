@@ -2,7 +2,7 @@ import { json, urlencoded } from 'body-parser'
 import morgan from 'morgan'
 import cors from 'cors'
 import { auth } from './middleware/auth'
-// import { firebaseInit } from './firebase/init'
+import { newUser } from './firebase/newUser'
 const express = require('express')
 const app = express()
 const helmet = require('helmet')
@@ -14,7 +14,7 @@ app.use(json())
 app.use(urlencoded({ extended: true }))
 app.use(morgan('dev'))
 
-// app.get('/firebase/init', firebaseInit)
+app.post('/firebase/newUser', newUser)
 
 module.exports = {
    path: '/api',
