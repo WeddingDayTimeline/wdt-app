@@ -189,7 +189,7 @@ export default {
             app: 'dig-hub'
           },
           data: {
-            Email: email
+            email: email
           }
         });
         if (post.data.success) {
