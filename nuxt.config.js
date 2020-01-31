@@ -31,6 +31,7 @@ export default {
   ** Plugins to load before mounting the App
   */
   plugins: [
+    { src: '~plugins/axios.js', ssr: false },
     { src: '~plugins/veeValidate.js', ssr: false },
     { src: '~plugins/vuesax.js', ssr: false },
     { src: '~plugins/vueGlobalEvents.js', ssr: false },

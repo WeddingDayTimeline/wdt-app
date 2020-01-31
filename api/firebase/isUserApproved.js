@@ -1,7 +1,9 @@
 const admin = require('firebase-admin');
 const dotenv = require('dotenv').config();
 
-export const approveUser = (req, res) => {
+export const isUserApproved = (req, res) => {
+
+    console.log('isUserApproved!');
 
     // First check if Firebase has been initialized server-side. If not, then initialize.
     if (!admin.apps.length) {
@@ -28,7 +30,7 @@ export const approveUser = (req, res) => {
         } catch(err) {
             console.error('write error')
             console.error(err)
-            res.redirect(`${process.env.PRODUCTION_URL}/userApproved?success=false&email=${req.query.email}`);
+            res.status(404).end()
         }
 
     }
@@ -37,21 +39,21 @@ export const approveUser = (req, res) => {
     async function firebaseApproveUser(email) {
         const user = await admin.auth().getUserByEmail(email);
         console.log('user:', user);
+        console.log('------------------ firebaseApproveUser');
         if (user.customClaims && user.customClaims.approved === true) {
             console.log('user.customClaims 1:', user.customClaims);
-            return;
+            res.send({ approved: true })
+        } else {
+            res.send({ approved: false })
         }
-        return admin.auth().setCustomUserClaims(user.uid, {
-            approved: true
-        })
+
     }
 
     try {
-        firebaseApproveUser(req.query.email);
-        res.redirect(`${process.env.PRODUCTION_URL}/userApproved?success=true&email=${req.query.email}`);
+        firebaseApproveUser(req.query.email)
     } catch (error) {
         console.log(error);
-        res.redirect(`${process.env.PRODUCTION_URL}/userApproved?success=false&email=${req.query.email}`);
+        res.status(404).end()
     }
 
 

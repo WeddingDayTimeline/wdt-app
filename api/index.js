@@ -4,6 +4,7 @@ import cors from 'cors'
 import { auth } from './middleware/auth'
 import { newUser } from './firebase/newUser'
 import { approveUser } from './firebase/approveUser'
+import { isUserApproved } from './firebase/isUserApproved'
 const express = require('express')
 const app = express()
 const helmet = require('helmet')
@@ -17,6 +18,7 @@ app.use(morgan('dev'))
 
 app.post('/firebase/newUser', newUser)
 app.get('/firebase/approveUser', approveUser)
+app.get('/firebase/isUserApproved', isUserApproved)
 
 module.exports = {
    path: '/api',

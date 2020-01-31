@@ -13,7 +13,7 @@
           DIG hub
         </div>
       </div>
-      <div id="input-cont" :class="Loading ? 'mostly-hidden' : ''">
+      <div v-if="!NewUserScreen" id="input-cont" :class="Loading ? 'mostly-hidden' : ''">
         <div id="input-cont-inner">
           <vs-input class="input" icon-no-border icon="email" :placeholder="SignInMode ? 'Email' : 'Choose an email'" type="email" v-model="Input.Email" autofocus="true" :readonly="DisableFields"/>
           <p v-if="ForgotMode && !ResetPasswordBtnClicked" class="reset-instructions">Please enter the email associated with your account.</p>
@@ -37,11 +37,45 @@
               Sign in with Google
             </vs-button>
           </div>
-          <div v-if="!PasswordResetEmailSent" id="bottom">
+          <div v-if="!PasswordResetEmailSent && !JustSignedUp" id="bottom">
             {{ SignInMode ? 'Need an account? ' : 'Have an account? ' }}<a :class="SignInMode ? '' : 'primary'" @click="SignUpMode()">{{ SignInMode ? 'Sign up' : 'Sign in' }}</a>
           </div>
           <div v-else id="bottom">
             <a class="primary" @click="SignUpMode('signIn')">Sign in</a>
+          </div>
+        </div>
+      </div>
+      <div v-if="NewUserScreen" id="new-user-screen-cont">
+        <div v-if="NewUserSlide === 0" id="new-user-slide-0" class="new-user-slide">
+          <div class="new-user-slide-text">
+            Success!<br><br>
+            Now, lets finish up your profile...
+          </div>
+          <vs-button class="full-width-button" color="primary" type="filled" @click="() => { NewUserSlide++ }">Next</vs-button>
+        </div>
+        <div v-if="NewUserSlide === 1" id="new-user-slide-1" class="new-user-slide">
+          <div class="new-user-slide-text">
+            First, let's start with your name:<br><br>
+          </div>
+          <vs-input class="input" placeholder="Full name" type="text" v-model="Input.Name" autofocus="true" :readonly="DisableFields"/>
+          <vs-button class="full-width-button" color="primary" type="filled" @click="UpdateProfileName()">Next</vs-button>
+        </div>
+        <div v-if="NewUserSlide === 2" id="new-user-slide-2" class="new-user-slide">
+          <div class="new-user-slide-text">
+            Great!<br><br>
+            Now, you can upload a profile image. To skip this for now, click Next.<br><br>
+          </div>
+          <input type="file" id="file" @change="UpdateProfilePhoto($event)" hidden ref="File" />
+          <img v-if="UploadedPhotoURL" :src="UploadedPhotoURL" class="uploaded-img" />
+          <vs-progress v-if="PhotoUploadState === 'uploading'" :percent="PhotoUploadProgress" color="#cfd8dc"></vs-progress>
+          <vs-button class="full-width-button" :class="PhotoUploadState === 'complete' || PhotoUploadState === 'error' ? 'no-click' : ''" :color="PhotoUploadBtnState.color" :icon="PhotoUploadBtnState.icon" type="filled" @click="ChooseProfilePhoto()">{{ !PhotoUploadState ? 'Choose Photo' : '' }}</vs-button>
+          <vs-button class="full-width-button" color="primary" type="filled" @click="() => { NewUserSlide++ }" :disabled="PhotoUploadState === 'uploading' ? true : false">Next</vs-button>
+        </div>
+        <div v-if="NewUserSlide === 3" id="new-user-slide-3" class="new-user-slide">
+          <div class="new-user-slide-text">
+            Perfect!<br><br>
+            Since this is a private app, you'll need to ask your manager to check their email so they can approve your account.<br><br>
+            Once approved, just refresh this page and sign in to get started!
           </div>
         </div>
       </div>
@@ -55,6 +89,7 @@
 import {mapGetters} from 'vuex'
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
+import 'firebase/storage'
 import Logo from '~/components/Logo.vue'
 
 export default {
@@ -71,7 +106,8 @@ export default {
       ForgotMode: false,
       Input: {
         Email: '',
-        Password: ''
+        Password: '',
+        Name: ''
       },
       Options: {
         RememberMe: false
@@ -85,8 +121,30 @@ export default {
       SubmitBtnDisabled: false,
       ResetPasswordBtnClicked: false,
       PasswordResetEmailSent: false,
-      DisableFields: false
+      DisableFields: false,
+      JustSignedUp: false,
+      NewUserScreen: false,
+      NewUserSlide: null,
+      PhotoUploadState: null,
+      PhotoUploadProgress: 0,
+      UploadedPhotoURL: '',
+      PhotoUploadBtnState: { icon: 'cloud_upload', color: 'primary' }
     };
+  },
+  watch: {
+    NewUserSlide: function () {
+      console.log(this.NewUserSlide);
+    },
+    PhotoUploadState: function () {
+      let state = this.PhotoUploadState;
+      if (state === 'uploading') {
+        this.PhotoUploadBtnState = { icon: 'cloud_queue', color: '#cfd8dc' }
+      } else if (state === 'complete') {
+        this.PhotoUploadBtnState = { icon: 'cloud_done', color: 'success' }
+      } else if (state === 'error') {
+        this.PhotoUploadBtnState = { icon: 'cloud_off', color: 'danger' }
+      }
+    }
   },
   computed: {
     ...mapGetters({
@@ -279,6 +337,93 @@ export default {
     },
     GoodToGo() {
       console.log('----- Good to go!');
+    },
+    // ClickNewUserSlideBtn() {
+    //   if (this.NewUserSlide <= 3) {
+    //     this.NewUserSlide++
+    //   } else {
+    //     // 
+    //   }
+    // },
+    UpdateProfileName() {
+      let vm = this;
+      const user = firebase.auth().currentUser;
+
+      user.updateProfile({
+        displayName: vm.Input.Name
+      }).then(function() {
+        // Update successful.
+        vm.NewUserSlide++
+      }).catch(function(error) {
+        // An error happened.
+        console.log(error);
+      });
+
+      console.log('user.displayName:', user.displayName);
+
+    },
+    ChooseProfilePhoto() {
+      let fileRef = this.$refs.File;
+      fileRef.click();
+    },
+    UpdateProfilePhoto(event) {
+      let vm = this;
+      console.log('event:', event);
+      const files = event.target.files;
+      if (files.length) {
+        const file = files[0];
+        const user = firebase.auth().currentUser;
+        const storageRef = firebase.storage().ref();
+        const profilePhotoRef = storageRef.child('profilePhoto');
+        const photoRef = profilePhotoRef.child(`${user.uid}`);
+        const uploadTask = photoRef.put(file);
+        this.PhotoUploadState = 'uploading';
+
+        // FILE UPLOAD TASK WITH STATE CHANGES FOR PROGRESS BAR
+        uploadTask.on(firebase.storage.TaskEvent.STATE_CHANGED, // or 'state_changed'
+          function(snapshot) {
+            // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+            var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            console.log('Upload is ' + progress + '% done');
+            vm.PhotoUploadProgress = progress;
+          }, function(error) {
+
+          // A full list of error codes is available at
+          // https://firebase.google.com/docs/storage/web/handle-errors
+          switch (error.code) {
+            case 'storage/unauthorized':
+              // User doesn't have permission to access the object
+              vm.PhotoUploadState = 'error'
+              break;
+
+            case 'storage/canceled':
+              // User canceled the upload
+              vm.PhotoUploadState = 'error'
+              break;
+
+            case 'storage/unknown':
+              // Unknown error occurred, inspect error.serverResponse
+              vm.PhotoUploadState = 'error'
+              break;
+          }
+        }, function() {
+          // Upload completed successfully, now we can get the download URL
+          uploadTask.snapshot.ref.getDownloadURL().then(function(downloadURL) {
+            console.log('File available at', downloadURL);
+            vm.PhotoUploadState = 'complete';
+            vm.UploadedPhotoURL = downloadURL;
+          });
+        });
+
+
+        // .then(function(snapshot) {
+        //   console.log('Uploaded a blob or file!');
+        //   console.log('snapshot:', snapshot);
+        // });
+
+      } else {
+        return
+      }
     }
   },
   mounted() {
@@ -303,7 +448,40 @@ export default {
           console.log('providerData:', providerData);
           console.log('signed in!');
           console.log('user:', user);
-          vm.$root.context.redirect('/dash')
+
+
+          async function checkIfApproved(email) {
+            console.log('email:', email);
+              const get = await vm.$axios({
+                method: 'get',
+                url: '/api/firebase/isUserApproved',
+                params: {
+                  app: 'dig-hub',
+                  email: email
+                }
+              })
+              if (get.data.approved) {
+                // YOU SHALL PASS
+                console.log('get.data.approved:', get.data.approved);
+                vm.$root.context.redirect('/dash')
+              } else {
+                console.log('user exists but not yet approved');
+                vm.JustSignedUp = true;
+                vm.NewUserScreen = true;
+                vm.NewUserSlide = 0;
+                vm.SignInMode = true;
+                vm.Loading = false;
+                vm.Thinking = false;
+              }
+          }
+
+          try {
+            checkIfApproved(user.email)
+          } catch (error) {
+            console.log(error);
+          }
+
+
         } else {
           // User is signed out.
           vm.Loading = false
@@ -454,6 +632,18 @@ export default {
 .reset-instructions {
   max-width: 200px;
   color: material-color('blue-grey', '500');
+}
+
+
+.new-user-slide-text {
+  font-size: 1rem;
+  color: material-color('blue-grey', '600');
+}
+
+.uploaded-img {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
 }
 
 

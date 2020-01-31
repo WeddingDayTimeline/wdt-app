@@ -1,9 +1,10 @@
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
+import axios from 'axios'
 
-export default function ({ from, store, route, redirect }) {
+export default function ({ app, from, store, route, redirect }) {
 
-    // console.log('from:', from);
+    console.log('-------- Firebase will initialize!');
 
     if (!firebase.apps.length) {
         const config = {
@@ -26,20 +27,47 @@ export default function ({ from, store, route, redirect }) {
     firebase.auth().onAuthStateChanged(function(user) {
         if (user) {
           // User is signed in.
+          console.log('user:', user);
           console.log('user signed in!');
 
-          let displayName = user.displayName;
-          let email = user.email;
-          let emailVerified = user.emailVerified;
-          let photoURL = user.photoURL;
-          let isAnonymous = user.isAnonymous;
-          let uid = user.uid;
-          let providerData = user.providerData;
+          async function checkIfApproved(email) {
+            console.log('email:', email);
+              const get = await app.$axios({
+                method: 'get',
+                url: '/api/firebase/isUserApproved',
+                params: {
+                  app: 'dig-hub',
+                  email: email
+                }
+              })
+              if (get.data.approved) {
+                // YOU SHALL PASS
+                console.log('get.data.approved:', get.data.approved);
+              } else {
+                console.log('user exists but not yet approved');
+                return redirect('/')
+              }
+          }
+
+          try {
+            checkIfApproved(user.email)
+          } catch (error) {
+            console.log(error);
+          }
+          
+
+          // let displayName = user.displayName;
+          // let email = user.email;
+          // let emailVerified = user.emailVerified;
+          // let photoURL = user.photoURL;
+          // let isAnonymous = user.isAnonymous;
+          // let uid = user.uid;
+          // let providerData = user.providerData;
           // ...
         } else {
           // User is signed out.
           console.log('no user signed in.');
-          if (route.fullPath != '/') {
+          if (route.fullPath != '/' && route.path != '/userApproved') {
             return redirect('/')
           }
         }
