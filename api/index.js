@@ -5,6 +5,7 @@ import { auth } from './middleware/auth'
 import { newUser } from './firebase/newUser'
 import { approveUser } from './firebase/approveUser'
 import { isUserApproved } from './firebase/isUserApproved'
+import { hasOnboarded } from './firebase/firestore/hasOnboarded'
 const express = require('express')
 const app = express()
 const helmet = require('helmet')
@@ -19,6 +20,8 @@ app.use(morgan('dev'))
 app.post('/firebase/newUser', newUser)
 app.get('/firebase/approveUser', approveUser)
 app.get('/firebase/isUserApproved', isUserApproved)
+
+app.post('/firebase/firestore/hasOnboarded', hasOnboarded)
 
 module.exports = {
    path: '/api',

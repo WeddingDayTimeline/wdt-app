@@ -90,6 +90,7 @@ import {mapGetters} from 'vuex'
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
 import 'firebase/storage'
+import 'firebase/firestore'
 import Logo from '~/components/Logo.vue'
 
 export default {
@@ -128,12 +129,31 @@ export default {
       PhotoUploadState: null,
       PhotoUploadProgress: 0,
       UploadedPhotoURL: '',
-      PhotoUploadBtnState: { icon: 'cloud_upload', color: 'primary' }
+      PhotoUploadBtnState: { icon: 'cloud_upload', color: 'primary' },
+      OnboardedConfirmed: false
     };
   },
   watch: {
-    NewUserSlide: function () {
+    NewUserSlide: async function () {
       console.log(this.NewUserSlide);
+
+      if (this.NewUserSlide === 3) {
+        const user = firebase.auth().currentUser;
+        const get = await this.$axios({
+          method: 'get',
+          url: '/api/firebase/isUserApproved',
+          params: {
+            app: 'dig-hub',
+            email: user.email
+          }
+        })
+
+        if (get.data.approved && get.data.emailVerified) {
+        // YOU SHALL PASS
+          this.$root.context.redirect('/dash')
+        }
+
+      }
     },
     PhotoUploadState: function () {
       let state = this.PhotoUploadState;
@@ -196,7 +216,7 @@ export default {
       firebase.auth().createUserWithEmailAndPassword(vm.Input.Email, vm.Input.Password)
       .then(async function(response) {
         console.log('--------- about to send');
-        await vm.NewUserFlow(response.user.email)
+        await vm.NewUserFlow(response.user.email, response.user.uid)
         .then(function(res) {
           console.log('res:', res);
           console.log('----------got response');
@@ -204,10 +224,12 @@ export default {
             vm.SubmitBtnColor = 'success';
             vm.SubmitBtnDisabled = false;
             vm.Thinking = false;
+            vm.DisableFields = false;
             vm.SubmitBtnColor = 'success';
             console.log('response:', response);
             vm.GoodToGo()
           }
+          vm.SendVerificationEmail();
         })
         .catch(function(err) {
           console.log('err:', err);
@@ -233,12 +255,13 @@ export default {
         vm.Thinking = false;
         // ...
       });
+
     },
     GoogleSignIn() {
       const provider = new firebase.auth.GoogleAuthProvider();
       firebase.auth().signInWithRedirect(provider);
     },
-    async NewUserFlow(email) {
+    async NewUserFlow(email, uid) {
       try {
         const post = await this.$axios({
           method: 'post',
@@ -247,7 +270,8 @@ export default {
             app: 'dig-hub'
           },
           data: {
-            email: email
+            email: email,
+            uid: uid
           }
         });
         if (post.data.success) {
@@ -259,6 +283,19 @@ export default {
         console.error(error);
         return false
       }
+    },
+    async SendVerificationEmail() {
+      const user = firebase.auth().currentUser;
+
+      await user.sendEmailVerification()
+      .then(function() {
+        // Email sent.
+        console.log('verification email sent!');
+      }).catch(function(error) {
+        // An error happened.
+        console.log('error sending verification email');
+      });
+
     },
     SignUpMode(toMode = null) {
       this.Input.Email = '';
@@ -327,12 +364,22 @@ export default {
       }, 4500);
     },
     OnKeyUpEnter() {
-      if (this.SignInMode && !this.ForgotMode) {
-        this.SignIn()
-      } else if (!this.SignInMode && !this.ForgotMode) {
-        this.SignUp()
-      } else if (this.ForgotMode) {
-        this.ResetPassword()
+      if (!this.NewUserScreen) {
+        if (this.SignInMode && !this.ForgotMode) {
+          this.SignIn()
+        } else if (!this.SignInMode && !this.ForgotMode) {
+          this.SignUp()
+        } else if (this.ForgotMode) {
+          this.ResetPassword()
+        }
+      } else {
+        if (this.NewUserSlide === 0) {
+          this.NewUserSlide++
+        } else if (this.NewUserSlide === 1) {
+          this.UpdateProfileName()
+        } else if (this.NewUserSlide > 1) {
+          return null
+        } 
       }
     },
     GoodToGo() {
@@ -354,6 +401,7 @@ export default {
       }).then(function() {
         // Update successful.
         vm.NewUserSlide++
+        vm.HasOnboarded(user.uid);
       }).catch(function(error) {
         // An error happened.
         console.log(error);
@@ -424,6 +472,53 @@ export default {
       } else {
         return
       }
+    },
+    async HasOnboarded(uid) {
+      try {
+        const post = await this.$axios({
+          method: 'post',
+          url: '/api/firebase/firestore/hasOnboarded',
+          params: {
+            app: 'dig-hub'
+          },
+          data: {
+            uid: uid
+          }
+        });
+        if (post.data.success) {
+          this.OnboardedConfirmed = true
+          return true
+        } else {
+          this.OnboardedConfirmed = false
+          return false
+        }
+      } catch (error) {
+        console.error(error);
+        return false
+      }
+    },
+    async CheckIfOnboarded() {
+      let vm = this;
+      const user = firebase.auth().currentUser;
+      let db = firebase.firestore();
+      await db.collection('users').doc(user.uid).get()
+      .then(function(doc) {
+          if (doc.exists) {
+              console.log("Document data:", doc.data());
+              if (doc.data().onboarded) {
+                vm.OnboardedConfirmed = true
+                return true
+              } else {
+                vm.OnboardedConfirmed = false
+                return false
+              }
+          } else {
+              // doc.data() will be undefined in this case
+              console.log("No such document!");
+          }
+      }).catch(function(error) {
+          console.log("Error getting document:", error);
+      });
     }
   },
   mounted() {
@@ -460,10 +555,23 @@ export default {
                   email: email
                 }
               })
-              if (get.data.approved) {
+
+              await vm.CheckIfOnboarded();
+
+              if (vm.OnboardedConfirmed) {
+                if (get.data.approved && get.data.emailVerified) {
                 // YOU SHALL PASS
+                  vm.$root.context.redirect('/dash')
+                } else {
+                  vm.JustSignedUp = true;
+                  vm.NewUserScreen = true;
+                  vm.NewUserSlide = 3;
+                  vm.SignInMode = true;
+                  vm.Loading = false;
+                  vm.Thinking = false;
+                }
                 console.log('get.data.approved:', get.data.approved);
-                vm.$root.context.redirect('/dash')
+                console.log('get.data.approved:', get.data.emailVerified);
               } else {
                 console.log('user exists but not yet approved');
                 vm.JustSignedUp = true;
