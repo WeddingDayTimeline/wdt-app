@@ -3,7 +3,7 @@ const dotenv = require('dotenv').config();
 
 export default function () {
 
-    // First check if Firebase has been initialized server-side. If not, then initialize.
+    // THIS IS CALLED FIRST ON CERTAIN REQUESTS TO MAKE SURE FIREBASE-ADMIN HAS INITIALIZED THE FIREBASE APP
     if (!admin.apps.length) {
 
         try {
@@ -19,7 +19,6 @@ export default function () {
                 auth_provider_x509_cert_url: process.env.FB_ADMIN_AUTH_PROVIDER_X509_CERT_URL,
                 client_x509_cert_url: process.env.FB_ADMIN_CLIENT_X509_CERT_URL
             }
-            console.log('creds:', creds);
 
             admin.initializeApp({
                 credential: admin.credential.cert(creds),
@@ -27,9 +26,8 @@ export default function () {
             })
             
             return
-        } catch(err) {
-            console.error('write error')
-            console.error(err)
+        } catch(error) {
+            console.error('error in initializeApp.js -- in express api/firebase folder', error)
             return res.status(404).end()
         }
 

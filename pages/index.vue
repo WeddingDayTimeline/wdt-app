@@ -135,8 +135,7 @@ export default {
   },
   watch: {
     NewUserSlide: async function () {
-      console.log(this.NewUserSlide);
-
+      // IF USER REACHES THE LAST newUser SLIDE, CHECK IF USER HAS BEEN APPROVED
       if (this.NewUserSlide === 3) {
         const user = firebase.auth().currentUser;
         const get = await this.$axios({
@@ -147,15 +146,19 @@ export default {
             email: user.email
           }
         })
+        .catch(function(error) {
+          console.log('caught error in newUserSlide watcher axios call to isUserApproved:', error);
+        })
 
+        // IF APPROVED AND EMAIL IS VERIFIED, REDIRECT TO DASHBOARD
         if (get.data.approved && get.data.emailVerified) {
-        // YOU SHALL PASS
           this.$root.context.redirect('/dash')
         }
 
       }
     },
     PhotoUploadState: function () {
+      // CHANGE PHOTO UPLOAD BUTTON ICON AND COLOR BASED ON UPLOAD STATE
       let state = this.PhotoUploadState;
       if (state === 'uploading') {
         this.PhotoUploadBtnState = { icon: 'cloud_queue', color: '#cfd8dc' }
@@ -166,102 +169,97 @@ export default {
       }
     }
   },
-  computed: {
-    ...mapGetters({
-      // GetFirebaseInit: 'getFirebaseInit',
-    })
-  },
   methods: {
     SignIn() {
-      console.log('SignIn()');
       let vm = this;
       
       this.Thinking = true;
       this.SubmitBtnDisabled = true;
       this.DisableFields = true;
       this.Error.Active ? this.Error.Active = false : null;
+      // SIGN INTO FIREBASE WITH EMAIL AND PASSWORD
       firebase.auth().signInWithEmailAndPassword(this.Input.Email, this.Input.Password)
       .then(function(response) {
+        // IF SUCCESS, GET UI READY
         vm.SubmitBtnColor = 'success';
         vm.SubmitBtnDisabled = false;
         vm.Thinking = false;
-        vm.GoodToGo()
       })
       .catch(function(error) {
-        // Handle Errors here.
+        // ERRORS FOR VUESAX ALERT COMPONENTS HERE
         const errorCode = error.code;
         const errorMessage = error.message;
 
+        // FIRST, UPDATE UI
         vm.SubmitBtnTempColor('warning');
         vm.SubmitBtnDisabled = false;
         vm.DisableFields = false;
         vm.Thinking = false;
 
+        // DISPLAY ERROR-SPECIFIC MESSAGES TO this.Error
         if (errorCode === 'auth/wrong-password' || errorCode === 'auth/user-not-found' || errorCode === 'auth/user-disabled') {
           vm.Error = { Active: true, Type: 0, Text: 'Incorrect email or password.' }
         } else if (errorCode === 'auth/invalid-email') {
           vm.Error = { Active: true, Type: 1, Text: 'This seems to be an invalid email. Please try again.' }
         }
-        // ...
       });
     },
     SignUp() {
-      console.log('SignUp()');
+      // FIRST, PREPARE UI
       this.Thinking = true;
       this.SubmitBtnDisabled = true;
       this.DisableFields = true;
       this.Error.Active ? this.Error.Active = false : null;
       let vm = this;
       
+      // CREATE FIREBASE USER WITH EMAIL AND PASSWORD
       firebase.auth().createUserWithEmailAndPassword(vm.Input.Email, vm.Input.Password)
       .then(async function(response) {
-        console.log('--------- about to send');
+        // THEN CALL NEWUSERFLOW, WHICH CALLS newUser API ROUTE TO SEND ADMIN APPROVAL EMAIL AND SET ONBOARDED STATE IN FIRESTORE USER DOC
         await vm.NewUserFlow(response.user.email, response.user.uid)
         .then(function(res) {
-          console.log('res:', res);
-          console.log('----------got response');
           if (res) {
+            // PREPARE UI
             vm.SubmitBtnColor = 'success';
             vm.SubmitBtnDisabled = false;
             vm.Thinking = false;
             vm.DisableFields = false;
             vm.SubmitBtnColor = 'success';
-            console.log('response:', response);
-            vm.GoodToGo()
           }
+          // SEND VERIFICATION EMAIL TO USER
           vm.SendVerificationEmail();
         })
-        .catch(function(err) {
-          console.log('err:', err);
+        .catch(function(error) {
+          console.log('caught error while awaiting this.newUserFlow function:', error);
         })
-
-        // ...
       })
       .catch(function(error) {
-        // Handle Errors here.
         vm.DisableFields = false;
         const errorCode = error.code;
         const errorMessage = error.message;
+
         if (errorCode === 'auth/email-already-in-use') {
           vm.Error = { Active: true, Type: 3, Text: `Looks like this email is already associated with an active account.` }
         } else if (errorCode === 'auth/invalid-email') {
           vm.Error = { Active: true, Type: 1, Text: 'This seems to be an invalid email. Please try again.' }
         } else {
-          console.log('errorCode:', errorCode, ' errorMessage:', errorMessage);
+          console.log('caught error while attempting to create firebase user with email/password, ', 'errorCode:', errorCode, ' errorMessage:', errorMessage);
         }
 
+        // PREPARE UI
         vm.SubmitBtnTempColor('warning');
         vm.SubmitBtnDisabled = false;
         vm.Thinking = false;
-        // ...
       });
 
     },
     GoogleSignIn() {
+      // CREATE NEW GOOGLE AUTH PROVIDER AND SIGNIN, REDIRECTING BACK TO THIS PAGE AFTERWARDS
       const provider = new firebase.auth.GoogleAuthProvider();
       firebase.auth().signInWithRedirect(provider);
     },
-    async NewUserFlow(email, uid) {
+    async NewUserFlow(email, uid, provider = 'password') {
+      // AXIOS CALL FOR newUser API ROUTE TO SEND ADMIN APPROVAL EMAIL AND SET ONBOARDED:FALSE DEFAULT STATE IN FIRESTORE USER DOC
       try {
         const post = await this.$axios({
           method: 'post',
@@ -271,7 +269,8 @@ export default {
           },
           data: {
             email: email,
-            uid: uid
+            uid: uid,
+            provider: provider
           }
         });
         if (post.data.success) {
@@ -280,24 +279,21 @@ export default {
           return false
         }
       } catch (error) {
-        console.error(error);
+        console.log('caught error while making axios call to newUser api route:', error);
         return false
       }
     },
     async SendVerificationEmail() {
+      // SEND VERIFICATION EMAIL TO NEW USER
       const user = firebase.auth().currentUser;
 
       await user.sendEmailVerification()
-      .then(function() {
-        // Email sent.
-        console.log('verification email sent!');
-      }).catch(function(error) {
-        // An error happened.
-        console.log('error sending verification email');
+      .catch(function(error) {
+        console.log('error sending verification email to new user');
       });
-
     },
     SignUpMode(toMode = null) {
+      // CHANGE SIGNIN MODE (SIGN-IN OR SIGN-UP)
       this.Input.Email = '';
       this.Input.Password = '';
 
@@ -308,21 +304,26 @@ export default {
           this.SignInMode = true
         }
       } else if (toMode === 'signIn') {
+        // PREPARE UI
         this.SignInMode = true;
         this.SubmitBtnColor = 'primary';
         this.PasswordResetEmailSent = false;
       } 
 
+      // CLEAN UP UI
       this.ForgotMode = false;
       this.Error.Active ? this.Error.Active = false : null
     },
     ForgotPassword() {
+      // ON 'Forgot Password' LINK CLICK
       this.ForgotMode = true;
       this.SignInMode = true;
       this.ResetPasswordBtnClicked === true ? this.ResetPasswordBtnClicked = false : null;
       this.Error.Active ? this.Error.Active = false : null;
     },
     ResetPassword() {
+      // SEND RESET PASSWORD EMAIL
+      // FIRST PREPARE UI
       this.Thinking = true;
       this.ResetPasswordBtnClicked = true;
       this.SubmitBtnDisabled = true;
@@ -330,17 +331,17 @@ export default {
       this.Error.Active ? this.Error.Active = false : null;
       let vm = this;
 
+      // SEND THE EMAIL
       firebase.auth().sendPasswordResetEmail(vm.Input.Email)
       .then(function() {
-        // Email sent.
-        vm.SubmitBtnColor = 'success';
-
+        // PREPARE UI
         vm.SubmitBtnColor = 'success';
         vm.SubmitBtnDisabled = false;
         vm.Thinking = false;
         vm.PasswordResetEmailSent = true;
-      }).catch(function(error) {
-        // An error happened.
+      })
+      .catch(function(error) {
+        // CREATE ERROR SPECIFIC MESSAGES FOR VUESAX ALERT COMPONENT
         vm.DisableFields = false;
         const errorCode = error.code;
         const errorMessage = error.message;
@@ -349,21 +350,24 @@ export default {
         } else if (errorCode === 'auth/invalid-email') {
           vm.Error = { Active: true, Type: 1, Text: 'This seems to be an invalid email. Please try again.' }
         } else {
-          console.log('errorCode:', errorCode, ' errorMessage:', errorMessage);
+          console.log('error caught while sending password reset email, ', 'errorCode:', errorCode, ' errorMessage:', errorMessage);
         }
 
+        // PREPARE UI 
         vm.SubmitBtnTempColor('warning');
         vm.SubmitBtnDisabled = false;
         vm.Thinking = false;
       });
     },
     SubmitBtnTempColor(color) {
+      // UPON ERROR, TEMPORARILY CHANGE COLOR, THEN CHANGE IT BACK TO PRIMARY
       this.SubmitBtnColor = color;
       setTimeout(() => {
         this.SubmitBtnColor = 'primary';
       }, 4500);
     },
     OnKeyUpEnter() {
+      // DIFFERENT FUNCTIONS FOR ENTER-KEY-PRESS EVENT DEPENDING ON STATE OR NEW-USER SLIDE
       if (!this.NewUserScreen) {
         if (this.SignInMode && !this.ForgotMode) {
           this.SignIn()
@@ -382,43 +386,31 @@ export default {
         } 
       }
     },
-    GoodToGo() {
-      console.log('----- Good to go!');
-    },
-    // ClickNewUserSlideBtn() {
-    //   if (this.NewUserSlide <= 3) {
-    //     this.NewUserSlide++
-    //   } else {
-    //     // 
-    //   }
-    // },
     UpdateProfileName() {
+      // UPDATE PROFILE NAME UPON COMPLETING FORM, THEN GO TO NEXT NEW-USER SLIDE, THEN CALL HasOnboarded FUNCTION TO SET FIREBASE USER DOC TO ONBOARDED:TRUE
       let vm = this;
       const user = firebase.auth().currentUser;
 
       user.updateProfile({
         displayName: vm.Input.Name
       }).then(function() {
-        // Update successful.
         vm.NewUserSlide++
         vm.HasOnboarded(user.uid);
       }).catch(function(error) {
-        // An error happened.
-        console.log(error);
+        console.log('caught error while updating user profile display name: ', error);
       });
-
-      console.log('user.displayName:', user.displayName);
-
     },
     ChooseProfilePhoto() {
+      // TRIGGER CLICK ON HIDDEN FILE INPUT ELEMENT TO OPEN OS'S NATIVE UPLOAD WINDOW
       let fileRef = this.$refs.File;
       fileRef.click();
     },
     UpdateProfilePhoto(event) {
       let vm = this;
-      console.log('event:', event);
       const files = event.target.files;
+      // IF A NEW FILE WAS UPLOADED
       if (files.length) {
+        // GET THE FILE AND UPLOAD IT TO profilePhoto FOLDER IN FIREBASE STORAGE
         const file = files[0];
         const user = firebase.auth().currentUser;
         const storageRef = firebase.storage().ref();
@@ -427,53 +419,51 @@ export default {
         const uploadTask = photoRef.put(file);
         this.PhotoUploadState = 'uploading';
 
-        // FILE UPLOAD TASK WITH STATE CHANGES FOR PROGRESS BAR
+        // WATCH FOR UPDATES TO TASK STATE ON uploadTasK, ABOVE
         uploadTask.on(firebase.storage.TaskEvent.STATE_CHANGED, // or 'state_changed'
           function(snapshot) {
             // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
             var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            console.log('Upload is ' + progress + '% done');
+            // SEND PROGRESS UPDATES TO VUE DATA
             vm.PhotoUploadProgress = progress;
           }, function(error) {
-
           // A full list of error codes is available at
           // https://firebase.google.com/docs/storage/web/handle-errors
           switch (error.code) {
             case 'storage/unauthorized':
               // User doesn't have permission to access the object
               vm.PhotoUploadState = 'error'
+              console.log('error while trying to upload profile photo:', error);
               break;
 
             case 'storage/canceled':
               // User canceled the upload
               vm.PhotoUploadState = 'error'
+              console.log('error while trying to upload profile photo:', error);
               break;
 
             case 'storage/unknown':
               // Unknown error occurred, inspect error.serverResponse
               vm.PhotoUploadState = 'error'
+              console.log('error while trying to upload profile photo:', error);
               break;
           }
         }, function() {
-          // Upload completed successfully, now we can get the download URL
-          uploadTask.snapshot.ref.getDownloadURL().then(function(downloadURL) {
+          // Upload completed successfully
+          // UPDATE VUE DATA WITH 'COMPLETE' STATE AND DOWNLOAD URL
+          uploadTask.snapshot.ref.getDownloadURL()
+          .then(function(downloadURL) {
             console.log('File available at', downloadURL);
             vm.PhotoUploadState = 'complete';
             vm.UploadedPhotoURL = downloadURL;
           });
         });
-
-
-        // .then(function(snapshot) {
-        //   console.log('Uploaded a blob or file!');
-        //   console.log('snapshot:', snapshot);
-        // });
-
       } else {
         return
       }
     },
     async HasOnboarded(uid) {
+      // TRIGGER AXIOS CALL WHEN ONBOARDING HAS COMPLETED (IN THIS CASE, ONBOARDING IS JUST UPDATING PROFILE NAME)
       try {
         const post = await this.$axios({
           method: 'post',
@@ -493,7 +483,7 @@ export default {
           return false
         }
       } catch (error) {
-        console.error(error);
+        console.error('error while making axios call to hasOnboarded api route', error);
         return false
       }
     },
@@ -504,7 +494,6 @@ export default {
       await db.collection('users').doc(user.uid).get()
       .then(function(doc) {
           if (doc.exists) {
-              console.log("Document data:", doc.data());
               if (doc.data().onboarded) {
                 vm.OnboardedConfirmed = true
                 return true
@@ -514,39 +503,38 @@ export default {
               }
           } else {
               // doc.data() will be undefined in this case
-              console.log("No such document!");
           }
       }).catch(function(error) {
-          console.log("Error getting document:", error);
+          console.log("Error getting firestore user document to check onboarded state:", error);
       });
     }
   },
   mounted() {
     let vm = this;
     firebase.auth().onAuthStateChanged(function(user) {
-        console.log('onAuthStateChanged()');
+        // IF USER IS SIGNED IN
         if (user) {
-          // User is signed in.
-          let displayName = user.displayName;
-          let email = user.email;
-          let emailVerified = user.emailVerified;
-          let photoURL = user.photoURL;
-          let isAnonymous = user.isAnonymous;
-          let uid = user.uid;
-          let providerData = user.providerData;
-          console.log('displayName:', displayName);
-          console.log('email:', email);
-          console.log('emailVerified:', emailVerified);
-          console.log('photoURL:', photoURL);
-          console.log('isAnonymous:', isAnonymous);
-          console.log('uid:', uid);
-          console.log('providerData:', providerData);
-          console.log('signed in!');
-          console.log('user:', user);
+          async function checkIfGoogleSignIn() {
+              // CHECK IF USER WAS SIGNED IN WITH GOOGLE METHOD OR NOT.
+              let provider = user.providerData[0].providerId;
 
+              if (provider === 'google.com') {
+                // IF SO, TRIGGER NewUserFlow FOR SENDING ADMIN APPROVAL EMAIL
+                await vm.NewUserFlow(user.email, user.uid, provider);
+                // AND TRIGGER HasOnBoarded TO SET ONBOARDED STATE IN FIRESTORE USER DOC
+                await vm.HasOnboarded(user.uid)
+                .then(function() {
+                  return true
+                })
+                .catch(function(error) {
+                  console.log('caught error in vm.HasOnboarded():', error)
+                });
+              };
+              return true
+          }
 
           async function checkIfApproved(email) {
-            console.log('email:', email);
+              // CHECK IF USER HAS BEEN APPROVED BY ADMIN YET
               const get = await vm.$axios({
                 method: 'get',
                 url: '/api/firebase/isUserApproved',
@@ -556,13 +544,15 @@ export default {
                 }
               })
 
+              // CHECK IF USER HAS FINISHED ONBOARDING
               await vm.CheckIfOnboarded();
-
+              
               if (vm.OnboardedConfirmed) {
                 if (get.data.approved && get.data.emailVerified) {
-                // YOU SHALL PASS
+                // IF ONBOARDED IS COMPLETE AND ADMIN HAS APPROVED BY EMAIL LINK, YOU PASS!
                   vm.$root.context.redirect('/dash')
                 } else {
+                  // PREPARE UI & STATE
                   vm.JustSignedUp = true;
                   vm.NewUserScreen = true;
                   vm.NewUserSlide = 3;
@@ -570,10 +560,8 @@ export default {
                   vm.Loading = false;
                   vm.Thinking = false;
                 }
-                console.log('get.data.approved:', get.data.approved);
-                console.log('get.data.approved:', get.data.emailVerified);
               } else {
-                console.log('user exists but not yet approved');
+                // PREPARE UI & STATE
                 vm.JustSignedUp = true;
                 vm.NewUserScreen = true;
                 vm.NewUserSlide = 0;
@@ -584,9 +572,19 @@ export default {
           }
 
           try {
-            checkIfApproved(user.email)
+            // CALL THE FUNCTIONS DECLARED ABOVE, IN ORDER
+            checkIfGoogleSignIn()
+            .then(function() {
+              checkIfApproved(user.email)
+              .catch(function(error) {
+                console.log('caught error in mounted() -- checkIfApproved():', error);
+              })
+            })
+            .catch(function(error) {
+              console.log('caught error in mounted() -- checkIfSoogleSignIn():', error);
+            })
           } catch (error) {
-            console.log(error);
+            console.log('caught error in try/catch in mounted()', error);
           }
 
 
@@ -680,6 +678,8 @@ export default {
   margin: 2.5rem 0 .5rem;
 }
 
+
+
 #google-option-cont {
   display: flex;
   flex-direction: column;
@@ -707,6 +707,8 @@ export default {
   color: material-color('blue-grey', '200');
   cursor: default;
 }
+
+
 
 #bottom {
   margin-top: 4rem;
@@ -741,6 +743,7 @@ export default {
   max-width: 200px;
   color: material-color('blue-grey', '500');
 }
+
 
 
 .new-user-slide-text {

@@ -1,4 +1,4 @@
-
+// UTILITY CLASSES
 .no-click {
     pointer-events: none !important;
     cursor: default;
@@ -9,7 +9,7 @@
     opacity: 0 !important;
 }
 
-// style change during html input elements' readonly state
+// STYLE CHANGE DURING HTML INPUT ELEMENTS' READONLY STATE
 input:read-only {
     background-color: material-color('blue-grey', '50');
     color: material-color('blue-grey', '400');

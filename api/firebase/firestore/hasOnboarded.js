@@ -4,26 +4,38 @@ import initializeApp from '../initializeApp.js'
 
 export const hasOnboarded = (req, res) => {
 
-    // First check if Firebase has been initialized server-side. If not, then initialize.
+    // FIRST CHECK IF FIREBASE HAS BEEN INITIALIZED SERVER-SIDE. IF NOT, THEN INITIALIZE.
     initializeApp();
     
     try {
       
         // CREATE NEW USER WITH ONBOARDED=FALSE DATA IN FIRESTORE
         let db = admin.firestore();
-
         const uid = req.body.uid;
+
         const userData = {
             onboarded: true
         };
 
-        let updateDoc = db.collection('users').doc(uid).update(userData);
-
+        let getDoc = db.collection('users').doc(uid).get()
+        .then(doc => {
+            // IF DOC DOESNT EXIST THEN USE 'SET' VERB TO CREATE A NEW DOC
+            if (!doc.exists) {
+              let updateDoc = db.collection('users').doc(uid).set(userData);
+            } else {
+                // IF DOC EXISTS THEN USE 'UPDATE' VERB SO AS TO NOT OVERWRITE ANYTHING YOU DON'T WANT TO
+              let updateDoc = db.collection('users').doc(uid).update(userData);
+            }
+          })
+          .catch(err => {
+            console.log('Error getting document in hasOnboarded express route', err);
+          });
 
         // FINISH
         res.send({ success: true })
 
     } catch(error) {
+        console.log('caught error in hasOnboarded express route -- :', error);
         res.status(404).end()
     }
 

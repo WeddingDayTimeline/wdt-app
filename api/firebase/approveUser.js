@@ -4,15 +4,13 @@ import initializeApp from './initializeApp.js'
 
 export const approveUser = (req, res) => {
 
-    // First check if Firebase has been initialized server-side. If not, then initialize.
+    // FIRST CHECK IF FIREBASE HAS BEEN INITIALIZED SERVER-SIDE. IF NOT, THEN INITIALIZE.
     initializeApp();
 
-
     async function firebaseApproveUser(email) {
+        // SET FIREBSAE CUSTOM CLAIM FOR USER'S APPROVED STATE. THIS ROUTE IS CALLED WHEN AN ADMIN CLICKS ON A USER APPROVAL LINK IN THEIR EMAIL.
         const user = await admin.auth().getUserByEmail(email);
-        console.log('user:', user);
         if (user.customClaims && user.customClaims.approved === true) {
-            console.log('user.customClaims 1:', user.customClaims);
             return;
         }
         return admin.auth().setCustomUserClaims(user.uid, {
@@ -21,10 +19,14 @@ export const approveUser = (req, res) => {
     }
 
     try {
-        firebaseApproveUser(req.query.email);
-        res.redirect(`${process.env.PRODUCTION_URL}/userApproved?success=true&email=${req.query.email}`);
+        firebaseApproveUser(req.query.email)
+        .then(function() {
+            // SUCCESS=TRUE IN QUERY STRING
+            res.redirect(`${process.env.PRODUCTION_URL}/userApproved?success=true&email=${req.query.email}`);
+        })
     } catch (error) {
-        console.log(error);
+        console.log('error caught in approveUser express route -- ', error);
+        // SUCCESS-FALSE IN QUERY STRING
         res.redirect(`${process.env.PRODUCTION_URL}/userApproved?success=false&email=${req.query.email}`);
     }
 

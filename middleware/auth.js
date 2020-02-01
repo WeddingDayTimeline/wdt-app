@@ -3,9 +3,6 @@ import 'firebase/auth'
 import axios from 'axios'
 
 export default function ({ app, from, store, route, redirect }) {
-
-    console.log('-------- Firebase will initialize!');
-
     if (!firebase.apps.length) {
         const config = {
             apiKey: process.env.FB_API_KEY,
@@ -16,57 +13,40 @@ export default function ({ app, from, store, route, redirect }) {
             messagingSenderId: process.env.FB_MESSAGING_SENDER_ID,
             appId: process.env.FB_APP_ID
         }
-        console.log('config:', config);
         firebase.initializeApp(config)
         store.commit('updateFirebaseInitState', true)
-        
         // firebase.firestore().settings({cacheSizeBytes: 41943040})    //* KEEP cacheSizeBytes (the value is equal to or close to the default) AS A WORKAROUND TO A BUG, WHERE THE SETTINGS FUNCTION NEEDS ATLEAST ONE ARGUMENT
     }
-
 
     firebase.auth().onAuthStateChanged(function(user) {
         if (user) {
           // User is signed in.
-          console.log('user:', user);
-          console.log('user signed in!');
-
+          // CHECK IF USER HAS BEEN APPROVED BY ADMIN BY EMAIL LINK
           async function checkIfApproved(email) {
-            console.log('email:', email);
-              const get = await app.$axios({
-                method: 'get',
-                url: '/api/firebase/isUserApproved',
-                params: {
-                  app: 'dig-hub',
-                  email: email
-                }
-              })
-              if (get.data.approved) {
-                // YOU SHALL PASS
-                console.log('get.data.approved:', get.data.approved);
-              } else {
-                console.log('user exists but not yet approved');
-                return redirect('/')
+            const get = await app.$axios({
+              method: 'get',
+              url: '/api/firebase/isUserApproved',
+              params: {
+                app: 'dig-hub',
+                email: email
               }
+            })
+            if (get.data.approved) {
+              // YOU SHALL PASS -- WILL DO NOTHING TO STOP YOU FROM GOING ON AND HAVING AN AWESOME TIME.
+            } else {
+              return redirect('/')
+            }
           }
 
           try {
             checkIfApproved(user.email)
           } catch (error) {
-            console.log(error);
+            console.log('error in auth.js middleware trying to check if user is approved', error);
           }
-          
 
-          // let displayName = user.displayName;
-          // let email = user.email;
-          // let emailVerified = user.emailVerified;
-          // let photoURL = user.photoURL;
-          // let isAnonymous = user.isAnonymous;
-          // let uid = user.uid;
-          // let providerData = user.providerData;
-          // ...
         } else {
           // User is signed out.
-          console.log('no user signed in.');
+          // IF ROUTE IS NOT THE INDEX ROUTE, OR THE userApproved ROUTE (VIA ADMIN APPROVAL EMAIL LINK), THEN REDIRECT BACK TO INDEX ROUTE
           if (route.fullPath != '/' && route.path != '/userApproved') {
             return redirect('/')
           }

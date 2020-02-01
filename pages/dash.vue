@@ -8,7 +8,6 @@
 
 <script>
 // import onAuthStateChanged from '~/mixins/onAuthStateChanged.js'    //? MUST BE IMPORTED ON EVERY PAGE, THEN DECLARED AS MIXIN.
-import {mapGetters} from 'vuex'
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
 import Logo from '~/components/Logo.vue'
@@ -23,11 +22,6 @@ export default {
     return {
       Loaded: false,
     };
-  },
-  computed: {
-    ...mapGetters({
-      // GetFirebaseInit: 'getFirebaseInit',
-    })
   },
   methods: {
       LogOut() {

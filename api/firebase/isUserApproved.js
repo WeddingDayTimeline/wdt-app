@@ -6,15 +6,13 @@ export const isUserApproved = (req, res) => {
 
     console.log('isUserApproved!');
 
-    // First check if Firebase has been initialized server-side. If not, then initialize.
+    // FIRST CHECK IF FIREBASE HAS BEEN INITIALIZED SERVER-SIDE. IF NOT, THEN INITIALIZE.
     initializeApp();
 
+    // CHECK TO SEE IF USER HAS BEEN APPROVED
     async function checkIfApproved(email) {
         const user = await admin.auth().getUserByEmail(email);
-        console.log('user:', user);
-        console.log('------------------ firebaseApproveUser');
         if (user.customClaims && user.customClaims.approved === true) {
-            console.log('user.customClaims 1:', user.customClaims);
             res.send({ approved: true, emailVerified: user.emailVerified })
         } else {
             res.send({ approved: false, emailVerified: user.emailVerified })
@@ -23,10 +21,9 @@ export const isUserApproved = (req, res) => {
     }
 
     try {
-        
         checkIfApproved(req.query.email)
     } catch (error) {
-        console.log(error);
+        console.log('error caught in isUserApproved express route -- ', error);
         res.status(404).end()
     }
 
