@@ -3,79 +3,109 @@
     <vs-progress class="progress" v-if="Loading || Thinking" indeterminate :height="3" color="primary"></vs-progress>
     <vs-card id="auth-card">
       <div v-if="!ForgotMode" id="auth-card-header" slot="header">
-        {{ SignInMode ? 'Sign In' : 'Sign Up' }}
+        {{ HeaderCopy }}
       </div>
       <div v-if="ForgotMode" id="auth-card-header" slot="header">
         Reset Password
       </div>
-      <div id="logo-cont">
+      <div v-if="!NewUserScreen" id="logo-cont">
         <div id="logo">
           DIG hub
         </div>
       </div>
       <div v-if="!NewUserScreen" id="input-cont" :class="Loading ? 'mostly-hidden' : ''">
-        <div id="input-cont-inner">
-          <vs-input class="input" icon-no-border icon="email" :placeholder="SignInMode ? 'Email' : 'Choose an email'" type="email" v-model="Input.Email" autofocus="true" :readonly="DisableFields"/>
-          <p v-if="ForgotMode && !ResetPasswordBtnClicked" class="reset-instructions">Please enter the email associated with your account.</p>
-          <p v-if="ForgotMode && ResetPasswordBtnClicked" class="reset-instructions">Success! Please check your email for your password reset link.</p>
-          <vs-input :class="ForgotMode ? 'no-click hide' : ''" class="input" icon-no-border icon="lock" :placeholder="SignInMode ? 'Password' : 'Create a password'" type="password" v-model="Input.Password" :readonly="DisableFields"/>
-          <a class="forgot forgot-password" :class="!SignInMode || Error.Active || ForgotMode ? 'no-click hide' : ''" @click="ForgotPassword()">Forgot password?</a>
-          <vs-alert v-if="Error.Active" class="error" active="true" color="danger" icon="erroroutline" >
-            {{ Error.Text }}
-            <span v-if="Error.Type === 0 || Error.Type === 3">
-              <br>
-              <a class="forgot" @click="ForgotPassword()">Forgot your password?</a>
-            </span>
-          </vs-alert>
-          <vs-button v-if="SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="SignIn()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">Sign in</vs-button>
-          <vs-button v-if="!SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="SignUp()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">Create Account</vs-button>
-          <vs-button v-if="ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="ResetPassword()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor !== 'success' ? 'Reset Password' : 'Email Sent' }}</vs-button>
-          <div id="google-option-cont">
-            <div class="or-cont"><hr><span class="or">or</span><hr></div>
-            <vs-button v-if="!ForgotMode" class="google-signin-btn full-width-button" color="#4285F4" type="flat" @click="GoogleSignIn()" :disabled="SubmitBtnDisabled">
-              <div class="google-logo"></div>
-              Sign in with Google
-            </vs-button>
+        <ValidationObserver ref="SignUpInObserver" tag="div" v-slot="{ invalid }" slim>
+          <div id="input-cont-inner">
+            <ValidationProvider class="input-validation-provider" rules="email" mode="lazy" v-slot="{ errors }" ref="EmailValidation">
+              <vs-input class="input" icon-no-border icon="email" :placeholder="SignInMode ? 'Email' : 'Choose an email'" type="email" v-model="Input.Email" autofocus="true" :readonly="DisableFields"/>
+              <span class="validation-errors no-click">{{ errors[0] }}</span>
+            </ValidationProvider>
+            <p v-if="ForgotMode && !ResetPasswordBtnClicked" class="reset-instructions">Please enter the email associated with your account.</p>
+            <p v-if="ForgotMode && ResetPasswordBtnClicked" class="reset-instructions">Success! Please check your email for your password reset link.</p>
+            <ValidationProvider class="input-validation-provider" rules="alpha_dash|min:8" v-slot="{ errors }" ref="PasswordValidation">
+              <vs-input :class="ForgotMode ? 'no-click hide' : ''" class="input" icon-no-border icon="lock" :placeholder="SignInMode ? 'Password' : 'Create a password'" type="password" v-model="Input.Password" :readonly="DisableFields"/>
+              <span class="validation-errors no-click">{{ errors[0] }}</span>
+            </ValidationProvider>
+            <a class="forgot forgot-password" :class="!SignInMode || Error.Active || ForgotMode ? 'no-click hide' : ''" @click="ForgotPassword()">Forgot password?</a>
+            <vs-alert v-if="Error.Active" class="error no-click" active="true" color="danger" icon="erroroutline" >
+              {{ Error.Text }}
+              <span v-if="Error.Type === 0 || Error.Type === 3">
+                <br>
+                <a class="forgot" @click="ForgotPassword()">Forgot your password?</a>
+              </span>
+            </vs-alert>
+            <vs-button v-if="SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="SignIn()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor === 'success' ? '' : 'Sign in' }}</vs-button>
+            <vs-button v-if="!SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="SignUp()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor === 'success' ? '' : 'Create Account' }}</vs-button>
+            <vs-button v-if="ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="ResetPassword()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor !== 'success' ? 'Reset Password' : 'Email Sent' }}</vs-button>
+            <div id="google-option-cont">
+              <div class="or-cont"><hr><span class="or">or</span><hr></div>
+              <vs-button v-if="!ForgotMode" class="google-signin-btn full-width-button" color="#4285F4" type="flat" @click="GoogleSignIn()" :disabled="SubmitBtnDisabled">
+                <div class="google-logo"></div>
+                Sign in with Google
+              </vs-button>
+            </div>
+            <div v-if="!PasswordResetEmailSent && !JustSignedUp" id="bottom">
+              {{ SignInMode ? 'Need an account? ' : 'Have an account? ' }}<a :class="SignInMode ? '' : 'primary'" @click="SignUpMode()">{{ SignInMode ? 'Sign up' : 'Sign in' }}</a>
+            </div>
+            <div v-else id="bottom">
+              <a class="primary" @click="SignUpMode('signIn')">Sign in</a>
+            </div>
           </div>
-          <div v-if="!PasswordResetEmailSent && !JustSignedUp" id="bottom">
-            {{ SignInMode ? 'Need an account? ' : 'Have an account? ' }}<a :class="SignInMode ? '' : 'primary'" @click="SignUpMode()">{{ SignInMode ? 'Sign up' : 'Sign in' }}</a>
-          </div>
-          <div v-else id="bottom">
-            <a class="primary" @click="SignUpMode('signIn')">Sign in</a>
-          </div>
-        </div>
+        </ValidationObserver>
       </div>
       <div v-if="NewUserScreen" id="new-user-screen-cont">
         <div v-if="NewUserSlide === 0" id="new-user-slide-0" class="new-user-slide">
           <div class="new-user-slide-text">
-            Success!<br><br>
-            Now, lets finish up your profile...
+            <vs-button class="new-user-slide-main-icon" radius color="success" size="large" type="filled" icon="done"></vs-button><br><br>
+            <span class="new-user-slide-text">Next, lets finish creating your profile...</span>
           </div>
-          <vs-button class="full-width-button" color="primary" type="filled" @click="() => { NewUserSlide++ }">Next</vs-button>
-        </div>
-        <div v-if="NewUserSlide === 1" id="new-user-slide-1" class="new-user-slide">
-          <div class="new-user-slide-text">
-            First, let's start with your name:<br><br>
+          <div class="new-user-slide-btn-cont">
+            <vs-button class="med-width-button" color="primary" type="filled" @click="() => { NewUserSlide++ }">Next</vs-button>
           </div>
-          <vs-input class="input" placeholder="Full name" type="text" v-model="Input.Name" autofocus="true" :readonly="DisableFields"/>
-          <vs-button class="full-width-button" color="primary" type="filled" @click="UpdateProfileName()">Next</vs-button>
         </div>
-        <div v-if="NewUserSlide === 2" id="new-user-slide-2" class="new-user-slide">
-          <div class="new-user-slide-text">
-            Great!<br><br>
-            Now, you can upload a profile image. To skip this for now, click Next.<br><br>
+        <ValidationObserver ref="NameObserver" tag="div" v-slot="{ invalid }" slim>
+          <div v-if="NewUserSlide === 1" id="new-user-slide-1" class="new-user-slide">
+              <div class="new-user-slide-text">
+                First, let's start with your name:<br><br>
+              </div>
+              <div class="new-user-slide-input">
+                <ValidationProvider rules="required" v-slot="{ errors }" ref="NameRequired">
+                  <vs-input class="input" placeholder="Full name" type="text" v-model="Input.Name" autofocus="true" :readonly="DisableFields"/>
+                  <span class="validation-errors no-click">{{ errors[0] }}</span>
+                </ValidationProvider>
+              </div>
+              <div class="new-user-slide-btn-cont">
+                <vs-button class="med-width-button" color="primary" type="filled" @click="UpdateProfileName()">Next</vs-button>
+              </div>
           </div>
-          <input type="file" id="file" @change="UpdateProfilePhoto($event)" hidden ref="File" />
-          <img v-if="UploadedPhotoURL" :src="UploadedPhotoURL" class="uploaded-img" />
-          <vs-progress v-if="PhotoUploadState === 'uploading'" :percent="PhotoUploadProgress" color="#cfd8dc"></vs-progress>
-          <vs-button class="full-width-button" :class="PhotoUploadState === 'complete' || PhotoUploadState === 'error' ? 'no-click' : ''" :color="PhotoUploadBtnState.color" :icon="PhotoUploadBtnState.icon" type="filled" @click="ChooseProfilePhoto()">{{ !PhotoUploadState ? 'Choose Photo' : '' }}</vs-button>
-          <vs-button class="full-width-button" color="primary" type="filled" @click="() => { NewUserSlide++ }" :disabled="PhotoUploadState === 'uploading' ? true : false">Next</vs-button>
-        </div>
+        </ValidationObserver>
+          <div v-if="NewUserSlide === 2" id="new-user-slide-2" class="new-user-slide">
+              <div class="new-user-slide-text">
+                <vs-button v-if="!UploadedPhotoURL" class="new-user-slide-main-icon" radius :color="PhotoUploadState === null ? 'success' : PhotoUploadBtnState.color" size="large" type="filled" icon="done"></vs-button>
+                <img v-if="UploadedPhotoURL" :src="UploadedPhotoURL" class="uploaded-img" /><br><br>
+                <span :style="{ opacity: (PhotoUploadState === null ? 1 : 0) }">Now, you can upload a profile image.<br><br><span class="skip weight300i">...to skip this for now, click Next.</span></span>
+              </div>
+              <div class="new-user-slide-input">
+                  <input type="file" id="file" @change="UpdateProfilePhoto($event)" hidden ref="File" />
+                <vs-progress v-if="PhotoUploadState === 'uploading'" :percent="PhotoUploadProgress" color="#cfd8dc"></vs-progress>
+              </div>
+              <vs-alert v-if="Error.Active" class="error" active="true" color="danger" icon="erroroutline" >
+                {{ Error.Text }}
+              </vs-alert>
+              <div class="new-user-slide-btn-cont">
+                <vs-button class="full-width-button flex-1" :class="PhotoUploadState === 'complete' || PhotoUploadState === 'error' ? 'no-click' : ''" :color="PhotoUploadBtnState.color" :icon="PhotoUploadBtnState.icon" type="filled" @click="ChooseProfilePhoto()">{{ !PhotoUploadState ? 'Choose Photo' : '' }}</vs-button>
+                <vs-button v-if="PhotoUploadState != 'uploading' && PhotoUploadState != 'complete'" class="med-width-button" color="primary" type="filled" @click="() => { NewUserSlide++ }" :disabled="PhotoUploadState === 'uploading' ? true : false">Next</vs-button>
+              </div>
+          </div>
         <div v-if="NewUserSlide === 3" id="new-user-slide-3" class="new-user-slide">
           <div class="new-user-slide-text">
-            Perfect!<br><br>
-            Since this is a private app, you'll need to ask your manager to check their email so they can approve your account.<br><br>
-            Once approved, just refresh this page and sign in to get started!
+            <vs-button class="new-user-slide-main-icon" radius color="rgba(31, 116, 255, 0.5)" size="large" type="filled" icon="email"></vs-button><br><br>
+            <div class="text-inner">
+              <span class="next-steps weight400">Next steps:</span><br><br><br>
+              <vs-button class="mini-number-icon float-left" radius color="rgba(31, 116, 255, 0.5)" size="small" type="filled">1</vs-button> Check your email to verify your account<br><br>
+              <vs-button class="mini-number-icon float-left" radius color="rgba(31, 116, 255, 0.5)" size="small" type="filled">2</vs-button> Ask your manager to check their email so they can approve your account.<br><br>
+              <vs-button class="mini-number-icon float-left" radius color="rgba(31, 116, 255, 0.5)" size="small" type="filled">3</vs-button> Refresh this page, and get started!
+            </div>
           </div>
         </div>
       </div>
@@ -92,11 +122,15 @@ import 'firebase/auth'
 import 'firebase/storage'
 import 'firebase/firestore'
 import Logo from '~/components/Logo.vue'
+import { ValidationProvider, ValidationObserver } from 'vee-validate';
+import digConfig from '~/digConfig.js';
 
 export default {
   name: 'auth',
   components: {
-    Logo
+    Logo,
+    ValidationProvider,
+    ValidationObserver
   },
   data() {
     return {
@@ -130,7 +164,8 @@ export default {
       PhotoUploadProgress: 0,
       UploadedPhotoURL: '',
       PhotoUploadBtnState: { icon: 'cloud_upload', color: 'primary' },
-      OnboardedConfirmed: false
+      OnboardedConfirmed: false,
+      FileSizeLimit: 3000000,    // FALLBACK SET TO 3MB HERE, BUT DON'T CHANGE THIS NUMBER, CHANGE IT IN digConfig.js
     };
   },
   watch: {
@@ -154,8 +189,10 @@ export default {
         if (get.data.approved && get.data.emailVerified) {
           this.$root.context.redirect('/dash')
         }
-
       }
+
+      // MAKE SURE ANY ERRORS ARE NOT CROSSING OVER INTO NEXT SLIDE
+      this.ResetErrorState();
     },
     PhotoUploadState: function () {
       // CHANGE PHOTO UPLOAD BUTTON ICON AND COLOR BASED ON UPLOAD STATE
@@ -164,94 +201,125 @@ export default {
         this.PhotoUploadBtnState = { icon: 'cloud_queue', color: '#cfd8dc' }
       } else if (state === 'complete') {
         this.PhotoUploadBtnState = { icon: 'cloud_done', color: 'success' }
+        setTimeout(() => {
+          this.NewUserSlide++;
+        }, 3000);
       } else if (state === 'error') {
         this.PhotoUploadBtnState = { icon: 'cloud_off', color: 'danger' }
+      }
+    }
+  },
+  computed: {
+    HeaderCopy() {
+      if (!this.NewUserScreen) {
+        return this.SignInMode ? 'Sign In' : 'Sign Up'
+      } else {
+        return this.NewUserSlide !== 3 ? 'Create Profile' : 'Next Steps'
       }
     }
   },
   methods: {
     SignIn() {
       let vm = this;
-      
-      this.Thinking = true;
-      this.SubmitBtnDisabled = true;
-      this.DisableFields = true;
-      this.Error.Active ? this.Error.Active = false : null;
-      // SIGN INTO FIREBASE WITH EMAIL AND PASSWORD
-      firebase.auth().signInWithEmailAndPassword(this.Input.Email, this.Input.Password)
-      .then(function(response) {
-        // IF SUCCESS, GET UI READY
-        vm.SubmitBtnColor = 'success';
-        vm.SubmitBtnDisabled = false;
-        vm.Thinking = false;
-      })
-      .catch(function(error) {
-        // ERRORS FOR VUESAX ALERT COMPONENTS HERE
-        const errorCode = error.code;
-        const errorMessage = error.message;
+      // CHECK IF FIELDS ARE VALID, USING ValidateSignInUpFields() ASYNC METHOD
+      this.ValidateSignInUpFields()
+      .then(function(valid) {
+        if (valid) {
 
-        // FIRST, UPDATE UI
-        vm.SubmitBtnTempColor('warning');
-        vm.SubmitBtnDisabled = false;
-        vm.DisableFields = false;
-        vm.Thinking = false;
-
-        // DISPLAY ERROR-SPECIFIC MESSAGES TO this.Error
-        if (errorCode === 'auth/wrong-password' || errorCode === 'auth/user-not-found' || errorCode === 'auth/user-disabled') {
-          vm.Error = { Active: true, Type: 0, Text: 'Incorrect email or password.' }
-        } else if (errorCode === 'auth/invalid-email') {
-          vm.Error = { Active: true, Type: 1, Text: 'This seems to be an invalid email. Please try again.' }
-        }
-      });
-    },
-    SignUp() {
-      // FIRST, PREPARE UI
-      this.Thinking = true;
-      this.SubmitBtnDisabled = true;
-      this.DisableFields = true;
-      this.Error.Active ? this.Error.Active = false : null;
-      let vm = this;
-      
-      // CREATE FIREBASE USER WITH EMAIL AND PASSWORD
-      firebase.auth().createUserWithEmailAndPassword(vm.Input.Email, vm.Input.Password)
-      .then(async function(response) {
-        // THEN CALL NEWUSERFLOW, WHICH CALLS newUser API ROUTE TO SEND ADMIN APPROVAL EMAIL AND SET ONBOARDED STATE IN FIRESTORE USER DOC
-        await vm.NewUserFlow(response.user.email, response.user.uid)
-        .then(function(res) {
-          if (res) {
-            // PREPARE UI
+          vm.Thinking = true;
+          vm.SubmitBtnDisabled = true;
+          vm.DisableFields = true;
+          vm.Error.Active ? vm.Error.Active = false : null;
+          // SIGN INTO FIREBASE WITH EMAIL AND PASSWORD
+          firebase.auth().signInWithEmailAndPassword(vm.Input.Email, vm.Input.Password)
+          .then(function(response) {
+            // IF SUCCESS, GET UI READY
             vm.SubmitBtnColor = 'success';
             vm.SubmitBtnDisabled = false;
             vm.Thinking = false;
+          })
+          .catch(function(error) {
+            // ERRORS FOR VUESAX ALERT COMPONENTS HERE
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            // FIRST, UPDATE UI
+            vm.SubmitBtnTempColor('warning');
+            vm.SubmitBtnDisabled = false;
             vm.DisableFields = false;
-            vm.SubmitBtnColor = 'success';
-          }
-          // SEND VERIFICATION EMAIL TO USER
-          vm.SendVerificationEmail();
-        })
-        .catch(function(error) {
-          console.log('caught error while awaiting this.newUserFlow function:', error);
-        })
+            vm.Thinking = false;
+
+            // DISPLAY ERROR-SPECIFIC MESSAGES TO this.Error
+            if (errorCode === 'auth/wrong-password' || errorCode === 'auth/user-not-found' || errorCode === 'auth/user-disabled') {
+              vm.Error = { Active: true, Type: 0, Text: 'Incorrect email or password.' }
+            } else if (errorCode === 'auth/invalid-email') {
+              vm.Error = { Active: true, Type: 1, Text: 'This seems to be an invalid email. Please try again.' }
+            }
+          });
+
+        }
       })
       .catch(function(error) {
-        vm.DisableFields = false;
-        const errorCode = error.code;
-        const errorMessage = error.message;
+        console.log('caught error while validating fields in this.SignIn():', error);
+      })
 
-        if (errorCode === 'auth/email-already-in-use') {
-          vm.Error = { Active: true, Type: 3, Text: `Looks like this email is already associated with an active account.` }
-        } else if (errorCode === 'auth/invalid-email') {
-          vm.Error = { Active: true, Type: 1, Text: 'This seems to be an invalid email. Please try again.' }
-        } else {
-          console.log('caught error while attempting to create firebase user with email/password, ', 'errorCode:', errorCode, ' errorMessage:', errorMessage);
+      
+    },
+    SignUp() {
+      let vm = this;
+      // CHECK IF FIELDS ARE VALID, USING ValidateSignInUpFields() ASYNC METHOD
+      this.ValidateSignInUpFields()
+      .then(function(valid) {
+        if (valid) {
+          // FIRST, PREPARE UI
+          vm.Thinking = true;
+          vm.SubmitBtnDisabled = true;
+          vm.DisableFields = true;
+          vm.Error.Active ? vm.Error.Active = false : null;
+          
+          // CREATE FIREBASE USER WITH EMAIL AND PASSWORD
+          firebase.auth().createUserWithEmailAndPassword(vm.Input.Email, vm.Input.Password)
+          .then(async function(response) {
+            // THEN CALL NEWUSERFLOW, WHICH CALLS newUser API ROUTE TO SEND ADMIN APPROVAL EMAIL AND SET ONBOARDED STATE IN FIRESTORE USER DOC
+            await vm.NewUserFlow(response.user.email, response.user.uid)
+            .then(function(res) {
+              if (res) {
+                // PREPARE UI
+                vm.SubmitBtnColor = 'success';
+                vm.SubmitBtnDisabled = false;
+                vm.Thinking = false;
+                vm.DisableFields = false;
+                vm.SubmitBtnColor = 'success';
+              }
+              // SEND VERIFICATION EMAIL TO USER
+              vm.SendVerificationEmail();
+            })
+            .catch(function(error) {
+              console.log('caught error while awaiting this.newUserFlow function:', error);
+            })
+          })
+          .catch(function(error) {
+            vm.DisableFields = false;
+            const errorCode = error.code;
+            const errorMessage = error.message;
+
+            if (errorCode === 'auth/email-already-in-use') {
+              vm.Error = { Active: true, Type: 3, Text: `Looks like this email is already associated with an active account.` }
+            } else if (errorCode === 'auth/invalid-email') {
+              vm.Error = { Active: true, Type: 1, Text: 'This seems to be an invalid email. Please try again.' }
+            } else {
+              console.log('caught error while attempting to create firebase user with email/password, ', 'errorCode:', errorCode, ' errorMessage:', errorMessage);
+            }
+
+            // PREPARE UI
+            vm.SubmitBtnTempColor('warning');
+            vm.SubmitBtnDisabled = false;
+            vm.Thinking = false;
+          });
         }
-
-        // PREPARE UI
-        vm.SubmitBtnTempColor('warning');
-        vm.SubmitBtnDisabled = false;
-        vm.Thinking = false;
-      });
-
+      })
+      .catch(function(error) {
+        console.log('caught error while validating fields in this.SignUp():', error);
+      })
     },
     GoogleSignIn() {
       // CREATE NEW GOOGLE AUTH PROVIDER AND SIGNIN, REDIRECTING BACK TO THIS PAGE AFTERWARDS
@@ -322,42 +390,51 @@ export default {
       this.Error.Active ? this.Error.Active = false : null;
     },
     ResetPassword() {
-      // SEND RESET PASSWORD EMAIL
-      // FIRST PREPARE UI
-      this.Thinking = true;
-      this.ResetPasswordBtnClicked = true;
-      this.SubmitBtnDisabled = true;
-      this.DisableFields = true;
-      this.Error.Active ? this.Error.Active = false : null;
       let vm = this;
+      // CHECK IF FIELDS ARE VALID, USING ValidateSignInUpFields() ASYNC METHOD
+      this.ValidateSignInUpFields()
+      .then(function(valid) {
+        if (valid) {
+          // SEND RESET PASSWORD EMAIL
+          // FIRST PREPARE UI
+          vm.Thinking = true;
+          vm.ResetPasswordBtnClicked = true;
+          vm.SubmitBtnDisabled = true;
+          vm.DisableFields = true;
+          vm.Error.Active ? vm.Error.Active = false : null;
 
-      // SEND THE EMAIL
-      firebase.auth().sendPasswordResetEmail(vm.Input.Email)
-      .then(function() {
-        // PREPARE UI
-        vm.SubmitBtnColor = 'success';
-        vm.SubmitBtnDisabled = false;
-        vm.Thinking = false;
-        vm.PasswordResetEmailSent = true;
+          // SEND THE EMAIL
+          firebase.auth().sendPasswordResetEmail(vm.Input.Email)
+          .then(function() {
+            // PREPARE UI
+            vm.SubmitBtnColor = 'success';
+            vm.SubmitBtnDisabled = false;
+            vm.Thinking = false;
+            vm.PasswordResetEmailSent = true;
+          })
+          .catch(function(error) {
+            // CREATE ERROR SPECIFIC MESSAGES FOR VUESAX ALERT COMPONENT
+            vm.DisableFields = false;
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            if (errorCode === 'auth/user-not-found') {
+              vm.Error = { Active: true, Type: 2, Text: `We couldn't find an accout associated with this email. Please try again.` }
+            } else if (errorCode === 'auth/invalid-email') {
+              vm.Error = { Active: true, Type: 1, Text: 'This seems to be an invalid email. Please try again.' }
+            } else {
+              console.log('error caught while sending password reset email, ', 'errorCode:', errorCode, ' errorMessage:', errorMessage);
+            }
+
+            // PREPARE UI 
+            vm.SubmitBtnTempColor('warning');
+            vm.SubmitBtnDisabled = false;
+            vm.Thinking = false;
+          });
+        }
       })
       .catch(function(error) {
-        // CREATE ERROR SPECIFIC MESSAGES FOR VUESAX ALERT COMPONENT
-        vm.DisableFields = false;
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        if (errorCode === 'auth/user-not-found') {
-          vm.Error = { Active: true, Type: 2, Text: `We couldn't find an accout associated with this email. Please try again.` }
-        } else if (errorCode === 'auth/invalid-email') {
-          vm.Error = { Active: true, Type: 1, Text: 'This seems to be an invalid email. Please try again.' }
-        } else {
-          console.log('error caught while sending password reset email, ', 'errorCode:', errorCode, ' errorMessage:', errorMessage);
-        }
-
-        // PREPARE UI 
-        vm.SubmitBtnTempColor('warning');
-        vm.SubmitBtnDisabled = false;
-        vm.Thinking = false;
-      });
+        console.log('caught error while validating fields in this.ResetPassword(): ', error);
+      })
     },
     SubmitBtnTempColor(color) {
       // UPON ERROR, TEMPORARILY CHANGE COLOR, THEN CHANGE IT BACK TO PRIMARY
@@ -386,80 +463,109 @@ export default {
         } 
       }
     },
-    UpdateProfileName() {
-      // UPDATE PROFILE NAME UPON COMPLETING FORM, THEN GO TO NEXT NEW-USER SLIDE, THEN CALL HasOnboarded FUNCTION TO SET FIREBASE USER DOC TO ONBOARDED:TRUE
+    async UpdateProfileName() {
       let vm = this;
-      const user = firebase.auth().currentUser;
+      // CHECK IF NAME FIELD IS VALID IF SO, COMPLETE FUNCTION
+      const isValid = await vm.$refs.NameObserver.validate();
+      if (!isValid) {
+        // 
+      } else if (isValid) {
 
-      user.updateProfile({
-        displayName: vm.Input.Name
-      }).then(function() {
-        vm.NewUserSlide++
-        vm.HasOnboarded(user.uid);
-      }).catch(function(error) {
-        console.log('caught error while updating user profile display name: ', error);
-      });
+        // UPDATE PROFILE NAME UPON COMPLETING FORM, THEN GO TO NEXT NEW-USER SLIDE, THEN CALL HasOnboarded FUNCTION TO SET FIREBASE USER DOC TO ONBOARDED:TRUE
+        const user = firebase.auth().currentUser;
+
+        user.updateProfile({
+          displayName: vm.Input.Name
+        }).then(function() {
+          vm.NewUserSlide++
+          vm.HasOnboarded(user.uid);
+        }).catch(function(error) {
+          console.log('caught error while updating user profile display name: ', error);
+        });
+      }
+
     },
     ChooseProfilePhoto() {
       // TRIGGER CLICK ON HIDDEN FILE INPUT ELEMENT TO OPEN OS'S NATIVE UPLOAD WINDOW
       let fileRef = this.$refs.File;
       fileRef.click();
     },
-    UpdateProfilePhoto(event) {
+    async UpdateProfilePhoto(event) {
       let vm = this;
+      this.ResetErrorState();
+
       const files = event.target.files;
       // IF A NEW FILE WAS UPLOADED
+
       if (files.length) {
-        // GET THE FILE AND UPLOAD IT TO profilePhoto FOLDER IN FIREBASE STORAGE
+        // GET THE FILE
         const file = files[0];
-        const user = firebase.auth().currentUser;
-        const storageRef = firebase.storage().ref();
-        const profilePhotoRef = storageRef.child('profilePhoto');
-        const photoRef = profilePhotoRef.child(`${user.uid}`);
-        const uploadTask = photoRef.put(file);
-        this.PhotoUploadState = 'uploading';
+        console.log('file:', file);
+        // VALIDATION
+        let validation = { size: false, type: false}
 
-        // WATCH FOR UPDATES TO TASK STATE ON uploadTasK, ABOVE
-        uploadTask.on(firebase.storage.TaskEvent.STATE_CHANGED, // or 'state_changed'
-          function(snapshot) {
-            // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
-            var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            // SEND PROGRESS UPDATES TO VUE DATA
-            vm.PhotoUploadProgress = progress;
-          }, function(error) {
-          // A full list of error codes is available at
-          // https://firebase.google.com/docs/storage/web/handle-errors
-          switch (error.code) {
-            case 'storage/unauthorized':
-              // User doesn't have permission to access the object
-              vm.PhotoUploadState = 'error'
-              console.log('error while trying to upload profile photo:', error);
-              break;
-
-            case 'storage/canceled':
-              // User canceled the upload
-              vm.PhotoUploadState = 'error'
-              console.log('error while trying to upload profile photo:', error);
-              break;
-
-            case 'storage/unknown':
-              // Unknown error occurred, inspect error.serverResponse
-              vm.PhotoUploadState = 'error'
-              console.log('error while trying to upload profile photo:', error);
-              break;
+        if (file.size <= vm.FileSizeLimit) {
+          validation.size = true;
+          if (file.type.includes('image')) {
+            validation.type = true;
+          } else {
+            vm.Error = { Active: true, Type: 4, Text: 'Must be an image file' }
           }
-        }, function() {
-          // Upload completed successfully
-          // UPDATE VUE DATA WITH 'COMPLETE' STATE AND DOWNLOAD URL
-          uploadTask.snapshot.ref.getDownloadURL()
-          .then(function(downloadURL) {
-            console.log('File available at', downloadURL);
-            vm.PhotoUploadState = 'complete';
-            vm.UploadedPhotoURL = downloadURL;
+        } else {
+          vm.Error = { Active: true, Type: 4, Text: 'File size must be less than 3 mb' }
+        }
+
+        if (validation.size && validation.type) {
+          // UPLOAD IT TO profilePhoto FOLDER IN FIREBASE STORAGE
+          const user = firebase.auth().currentUser;
+          const storageRef = firebase.storage().ref();
+          const profilePhotoRef = storageRef.child('profilePhoto');
+          const photoRef = profilePhotoRef.child(`${user.uid}`);
+          const uploadTask = photoRef.put(file);
+          this.PhotoUploadState = 'uploading';
+
+          // WATCH FOR UPDATES TO TASK STATE ON uploadTasK, ABOVE
+          uploadTask.on(firebase.storage.TaskEvent.STATE_CHANGED, // or 'state_changed'
+            function(snapshot) {
+              // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+              var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              // SEND PROGRESS UPDATES TO VUE DATA
+              vm.PhotoUploadProgress = progress;
+            }, function(error) {
+            // A full list of error codes is available at
+            // https://firebase.google.com/docs/storage/web/handle-errors
+            switch (error.code) {
+              case 'storage/unauthorized':
+                // User doesn't have permission to access the object
+                vm.PhotoUploadState = 'error'
+                console.log('error while trying to upload profile photo:', error);
+                break;
+
+              case 'storage/canceled':
+                // User canceled the upload
+                vm.PhotoUploadState = 'error'
+                console.log('error while trying to upload profile photo:', error);
+                break;
+
+              case 'storage/unknown':
+                // Unknown error occurred, inspect error.serverResponse
+                vm.PhotoUploadState = 'error'
+                console.log('error while trying to upload profile photo:', error);
+                break;
+            }
+          }, function() {
+            // Upload completed successfully
+            // UPDATE VUE DATA WITH 'COMPLETE' STATE AND DOWNLOAD URL
+            uploadTask.snapshot.ref.getDownloadURL()
+            .then(function(downloadURL) {
+              console.log('File available at', downloadURL);
+              vm.PhotoUploadState = 'complete';
+              vm.UploadedPhotoURL = downloadURL;
+            });
           });
-        });
-      } else {
-        return
+        } else {
+          return
+        }
       }
     },
     async HasOnboarded(uid) {
@@ -507,7 +613,30 @@ export default {
       }).catch(function(error) {
           console.log("Error getting firestore user document to check onboarded state:", error);
       });
+    },
+    async ValidateSignInUpFields() {
+      // CHECK IF EMAIL FIELD IS VALID IF SO, RETURN TRUE
+      const isValid = await this.$refs.SignUpInObserver.validate();
+      if (!isValid) {
+        return false
+      } else if (isValid) {
+        return true
+      }
+    },
+    ResetErrorState() {
+      // MAKE SURE ANY ERRORS ARE NOT CROSSING OVER INTO NEXT SLIDE
+      this.Error = {
+        Active: false,
+        Type: 0,
+        Text: '',
+      }
     }
+  },
+  created() {
+    // IMPORT FILE SIZE LIMIT FROM digConfig.js
+    const digUser = digConfig.user
+    this.FileSizeLimit = digUser.profilePhotoSizeLimit;
+    this.ResetErrorState();
   },
   mounted() {
     let vm = this;
@@ -626,11 +755,21 @@ export default {
   width: 22rem;
   max-width: 100%;
   height: auto;
+  min-height: 22rem;
 }
 
 #auth-card-header {
   color: material-color('blue-grey', '300');
   cursor: default;
+}
+
+::v-deep .vs-card--content {
+  height: calc(100% - 38.4px);    // 38.4px is header height and is consistent.
+}
+
+#new-user-screen-cont {
+  height: 100%;
+  padding: .666rem;
 }
 
 #logo-cont {
@@ -651,7 +790,7 @@ export default {
   align-items: center;
 }
 
-.input {
+.input, .input-validation-provider {
   margin-bottom: 1rem;
 }
 
@@ -746,17 +885,74 @@ export default {
 
 
 
+.new-user-slide {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+}
+
+.new-user-slide-main-icon {
+  margin: 3rem 0;
+}
+
 .new-user-slide-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   font-size: 1rem;
   color: material-color('blue-grey', '600');
+}
+
+.new-user-slide-text .text-inner {
+
+}
+
+#new-user-slide-1 .new-user-slide-text {
+  flex: 1;
+  justify-content: center;
+}
+
+.new-user-slide-input {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.new-user-slide-btn-cont {
+    display: flex;
+    justify-content: flex-end;
+}
+
+#new-user-slide-2 .new-user-slide-btn-cont {
+    justify-content: space-around;
+}
+
+.skip {
+  padding-top: .333rem;
+  color: material-color('blue-grey', '300');
 }
 
 .uploaded-img {
   width: 5rem;
   height: 5rem;
-  border-radius: 50%;
+  margin: 3rem 0;
+  border-radius: 6px;
 }
 
+.next-steps {
+  margin-left: 2.25rem;
+  color: material-color('blue-grey', '400');
+}
+
+
+.validation-errors {
+  display: block;
+  margin: -.5rem 0 0;
+  color: $danger;
+  font-style: italic;
+}
 
 </style>
 

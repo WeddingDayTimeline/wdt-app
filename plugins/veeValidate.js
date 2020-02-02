@@ -1,18 +1,28 @@
 import { extend } from "vee-validate";
-import { required, email, required_if } from "vee-validate/dist/rules";
+import { required, email, required_if, alpha_dash, min } from "vee-validate/dist/rules";
 
-// install the 'required' rule.
+// INSTALL RULES
 extend("required", {
   ...required,
-  message: "*required"
+  message: "* required"
 });
 
 extend('email', {
     ...email,
-    message: '*invalid email address'
+    message: 'invalid email address'
 });
 
 extend('required_if', {
     ...required_if,
-    message: '*one option must be chosen'
+    message: 'one option must be chosen'
+});
+
+extend('alpha_dash', {
+    ...alpha_dash,
+    message: 'can only contain (A-Z) (a-z) (0-9) (-) (_)'
+});
+
+extend('min', {
+    ...min,
+    message: `8 characters minimum`
 });

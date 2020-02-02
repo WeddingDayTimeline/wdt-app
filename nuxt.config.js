@@ -31,7 +31,7 @@ export default {
   ** Plugins to load before mounting the App
   */
   plugins: [
-    // { src: '~plugins/axiosInterceptors.js', ssr: false },
+    // { src: '~plugins/axiosInterceptors.js', ssr: false },    // KEEP FOR AXIOS CALL DEBUGGING
     { src: '~plugins/veeValidate.js', ssr: false },
     { src: '~plugins/vuesax.js', ssr: false },
     { src: '~plugins/vueGlobalEvents.js', ssr: false },
@@ -51,6 +51,7 @@ export default {
     // Doc: https://github.com/nuxt-community/dotenv-module
     '@nuxtjs/dotenv',
     '@nuxtjs/style-resources',
+    'nuxt-webfontloader',
   ],
 
   /*
@@ -93,10 +94,27 @@ export default {
     ]
   },
 
+  /*
+** Web Font Loader
+*/
+  webfontloader: {
+    google: {
+      families: ['Roboto:300, 300i,400,500,600,700&display=swap']
+    }
+  },
+
+
+  /*
+** Nuxt Build
+*/
   build: {
     /*
     ** You can extend webpack config here
     */
+    // Add exception
+    transpile: [
+      "vee-validate/dist/rules"
+    ],
     extend (config, ctx) {
       config.node = {
         fs: "empty"

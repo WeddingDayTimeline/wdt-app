@@ -9,6 +9,21 @@
     opacity: 0 !important;
 }
 
+.float-left {
+    float: left;
+}
+
+.float-right {
+    float: right;
+}
+
+
+// FLEXBOX
+.flex-1 {
+    flex: 1;
+}
+
+
 // STYLE CHANGE DURING HTML INPUT ELEMENTS' READONLY STATE
 input:read-only {
     background-color: material-color('blue-grey', '50');
