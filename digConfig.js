@@ -5,5 +5,6 @@ export default {
     },
     user: {
         profilePhotoSizeLimit: 3000000,    // MUST BE A MULTIPLE OF 1000000
+        defaultAvatar: '~assets/images/format/default-avatar.svg' 
     }
 }

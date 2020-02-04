@@ -35,6 +35,8 @@ export default {
     { src: '~plugins/veeValidate.js', ssr: false },
     { src: '~plugins/vuesax.js', ssr: false },
     { src: '~plugins/vueGlobalEvents.js', ssr: false },
+    { src: '~plugins/vueMaterial.js', ssr: false },
+    { src: '~plugins/vClickOutside.js', ssr: false },
   ],
   /*
   ** Nuxt.js dev-modules

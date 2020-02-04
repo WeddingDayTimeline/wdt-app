@@ -35,8 +35,10 @@
     "nuxt-webfontloader": "^1.1.0",
     "responsive-loader": "^1.2.0",
     "sass-loader": "^8.0.2",
+    "v-click-outside": "^3.0.1",
     "vee-validate": "^3.2.2",
     "vue-global-events": "^1.1.2",
+    "vue-material": "^1.0.0-beta-11",
     "vuesax": "^3.11.11"
   },
   "devDependencies": {

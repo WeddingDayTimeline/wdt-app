@@ -4,8 +4,6 @@ import initializeApp from './initializeApp.js'
 
 export const isUserApproved = (req, res) => {
 
-    console.log('isUserApproved!');
-
     // FIRST CHECK IF FIREBASE HAS BEEN INITIALIZED SERVER-SIDE. IF NOT, THEN INITIALIZE.
     initializeApp();
 
@@ -17,7 +15,6 @@ export const isUserApproved = (req, res) => {
         } else {
             res.send({ approved: false, emailVerified: user.emailVerified })
         }
-
     }
 
     try {

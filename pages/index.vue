@@ -102,8 +102,8 @@
             <vs-button class="new-user-slide-main-icon" radius color="rgba(31, 116, 255, 0.5)" size="large" type="filled" icon="email"></vs-button><br><br>
             <div class="text-inner">
               <span class="next-steps weight400">Next steps:</span><br><br><br>
-              <vs-button class="mini-number-icon float-left" radius color="rgba(31, 116, 255, 0.5)" size="small" type="filled">1</vs-button> Check your email to verify your account<br><br>
-              <vs-button class="mini-number-icon float-left" radius color="rgba(31, 116, 255, 0.5)" size="small" type="filled">2</vs-button> Ask your manager to check their email so they can approve your account.<br><br>
+              <vs-button class="mini-number-icon float-left" radius :color="NextStepsState.step1 ? 'success' : 'rgba(31, 116, 255, 0.5)'" :icon="NextStepsState.step1 ? 'done' : ''" size="small" type="filled">{{NextStepsState.step1 ? '' : '1'}}</vs-button><span :class="NextStepsState.step1 ? 'light-text' : ''"> Check your email to verify your account</span><br><br>
+              <vs-button class="mini-number-icon float-left" radius :color="NextStepsState.step2 ? 'success' : 'rgba(31, 116, 255, 0.5)'" :icon="NextStepsState.step2 ? 'done' : ''" size="small" type="filled">{{NextStepsState.step2 ? '' : '2'}}</vs-button><span :class="NextStepsState.step2 ? 'light-text' : ''"> Ask your manager to check their email so they can approve your account.</span><br><br>
               <vs-button class="mini-number-icon float-left" radius color="rgba(31, 116, 255, 0.5)" size="small" type="filled">3</vs-button> Refresh this page, and get started!
             </div>
           </div>
@@ -166,6 +166,7 @@ export default {
       PhotoUploadBtnState: { icon: 'cloud_upload', color: 'primary' },
       OnboardedConfirmed: false,
       FileSizeLimit: 3000000,    // FALLBACK SET TO 3MB HERE, BUT DON'T CHANGE THIS NUMBER, CHANGE IT IN digConfig.js
+      NextStepsState: { step1: false, step2: false }
     };
   },
   watch: {
@@ -184,6 +185,18 @@ export default {
         .catch(function(error) {
           console.log('caught error in newUserSlide watcher axios call to isUserApproved:', error);
         })
+
+        // IF APPROVED, SET ICON STATE
+        if (get.data.approved) {
+          this.NextStepsState.step1 = true;
+          console.log('this.NextStepsState.step1:', this.NextStepsState.step1);
+        }
+        
+        // IF EMAIL IS VERIFIED, SET ICON STATE
+        if (get.data.emailVerified) {
+          this.NextStepsState.step2 = true;
+          console.log('this.NextStepsState.step2:', this.NextStepsState.step2);
+        }
 
         // IF APPROVED AND EMAIL IS VERIFIED, REDIRECT TO DASHBOARD
         if (get.data.approved && get.data.emailVerified) {
@@ -944,6 +957,15 @@ export default {
 .next-steps {
   margin-left: 2.25rem;
   color: material-color('blue-grey', '400');
+}
+
+::v-deep .mini-number-icon i {
+  margin-right: 0px !important;
+}
+
+.light-text {
+  color: material-color('blue-grey', '200');
+  font-style: italic;
 }
 
 

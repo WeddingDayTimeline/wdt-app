@@ -1,36 +1,98 @@
 <template>
   <div id="dash-page-wrapper">
-      stuff<br>
-      <button @click="LogOut()">Log out</button>
+    <div id="layout" :class="[GetNavRightState.open ? 'nav-right-on' : '', GetNavLeftState.open ? 'nav-left-on' : '']">
+      <header class="header">
+        <div id="header-left">
+          <button @click="LogOut()"></button>
+        </div>
+        <div id="header-right">
+          <!-- <vs-button id="notif-icon-cont" color="primary" type="flat" size="large" icon="notifications"></vs-button> -->
+          <div class="notif-icon-cont" @click="ClickHeaderRight('notif')">
+            <md-icon class="notif-icon">notifications</md-icon>
+          </div>
+          <div id="user-area-cont" @click="ClickHeaderRight('user')">
+            <div class="user-icon-cont">
+              <div class="user-icon"></div>
+            </div>
+            <div class="user-name-cont">
+              <span class="user-name">Brendan</span>
+            </div>
+          </div>
+        </div>
+      </header>
+      <aside id="nav-left">
+        <div id="burger-cont" @click="ClickBurgerCont()">
+          <md-icon class="burger">sort</md-icon>
+        </div>
+      </aside>
+      <aside id="nav-right" v-click-outside="ClickOutsideNavRight"></aside>
+      <main class="main"></main>
+    </div>
+    <!-- <button @click="LogOut()">Log out</button> -->
   </div>
 </template>
 
 
 <script>
-// import onAuthStateChanged from '~/mixins/onAuthStateChanged.js'    //? MUST BE IMPORTED ON EVERY PAGE, THEN DECLARED AS MIXIN.
+import {mapGetters} from 'vuex'
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
 import Logo from '~/components/Logo.vue'
+import digConfig from '~/digConfig.js';
 
 export default {
   name: 'dash',
   components: {
     Logo
   },
-  // mixins: [ onAuthStateChanged ],
   data() {
     return {
-      Loaded: false,
+      
     };
   },
+  computed: {
+    ...mapGetters({
+      GetNavRightState: 'getNavRightState',
+      GetNavLeftState: 'getNavLeftState'
+    })
+  },
   methods: {
-      LogOut() {
-        setTimeout(() => {
-            firebase.auth().signOut()
-        }, 2000)
+    CommitUserInfo() {
+      const user = firebase.auth().currentUser;
+      const userInfo = {
+        uid: user.uid,
+        name: user.displayName,
+        email: user.email,
+        photo: user.photoURL || digConfig.user.defaultAvatar
       }
+      this.$store.commit("updateUserInfo", userInfo);
+    },
+    ClickBurgerCont() {
+      this.$store.commit("updateNavLeftState", null);
+    },
+    ClickHeaderRight(area) {
+      const payload = { area: area, open: true};
+      this.$store.commit("updateNavRightState", payload);
+    },
+    ClickOutsideNavRight(event) {
+      // IF USER CLICKS ANYWHERE OUTSIDE OF nav-right EXCEPT FOR header-right ELEMENTS, THEN CLOSE nav-right
+      if (
+        !event.target.classList.contains('notif-icon-cont') &&
+        event.target.id !== 'user-area-cont'
+        ) {
+          const payload = { open: false};
+          this.$store.commit("updateNavRightState", payload);
+        } else {
+        }
+    },
+    LogOut() {
+      setTimeout(() => {
+          firebase.auth().signOut()
+      }, 2000)
+    }
   },
   mounted() {
+    this.CommitUserInfo();
   }
 }
 </script>
@@ -38,6 +100,153 @@ export default {
 
 <style scoped lang="scss">
 
+$layout-margin: 1.2;
+$layout-margin-sum: $layout-margin * 2;
+$header-height: 3;
+
+#dash-page-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: calc(100% - #{$layout-margin-sum}rem);
+  height: calc(100% - #{$layout-margin-sum}rem);
+  min-height: calc(100vh - #{$layout-margin-sum}rem);
+  margin: #{$layout-margin}rem;
+  box-shadow: 0 4px 25px 0 rgba(0,0,0,.1);    // MIMICKING VUESAX CARD FOR MAIN LAYOUT
+  border-radius: 8px;    // MIMICKING VUESAX CARD FOR MAIN LAYOUT
+  overflow: hidden;    // JUST TO MAKE SURE BORDER-RADIUS IS MASKNIG ALL CHILDREN LAYERS
+}
+
+#layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 4rem 1fr 0rem;
+  grid-template-rows: #{$header-height}rem 1fr;
+  grid-template-areas:
+    "nav-left header header"
+    "nav-left main nav-right";
+  height: 100%;
+  width: 100%;
+}
+
+#layout.nav-left-on {
+  grid-template-columns: 12rem 1fr 0rem;
+}
+
+#layout.nav-right-on {
+  grid-template-columns: 4rem 1fr 15rem;
+}
+
+#layout.nav-right-on.nav-left-on {
+  grid-template-columns: 12rem 1fr 15rem;
+}
+
+header {
+  grid-area: header;
+  display: flex;
+  justify-content: space-between;
+  background-color: #648ca6;
+}
+
+#nav-left {
+  grid-area: nav-left;
+  background-color: #394263;
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: #{$header-height}rem;
+}
+
+#nav-right {
+  grid-area: nav-right;
+  background-color: #394263;
+}
+
+main {
+  grid-area: main;
+  background-color: #8fd4d9;
+}
+
+
+
+
+#header-left {
+  flex: 1;
+  height: 100%;
+}
+
+#header-right {
+  display: grid;
+  grid-template-columns: 4em 1fr;
+  grid-template-rows: 100%;
+  width: 15rem;
+  height: 100%;
+  background-color: #fff;
+}
+
+#user-area-cont {
+  grid-column: span 1;
+  justify-content: center;
+  display: grid;  
+  grid-template-columns: 4em 1fr;
+  grid-template-rows: 100%;
+  cursor: pointer;
+}
+
+#header-right .notif-icon-cont {
+  pointer-events: auto;
+  cursor: pointer;
+  display: flex;
+}
+
+#header-right .notif-icon {
+  color: material-color('blue-grey', '200');
+  pointer-events: none;
+}
+
+#user-area-cont {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.user-icon-cont {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  pointer-events: none;
+}
+
+.user-icon {
+  width: 2rem;
+  height: 2rem;
+  background-color: material-color('blue-grey', '200');
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.user-name-cont {
+  display: flex;
+  align-items:center;
+  font-weight: 400;
+  color: material-color('blue-grey', '400');
+  pointer-events: none;
+}
+
+.user-name {
+  pointer-events: none;
+}
+
+
+
+#burger-cont {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+#layout.nav-left-on #burger-cont {
+  width: 4rem;
+}
 
 </style>
 
