@@ -21,16 +21,15 @@ export const state = () => ({
 export const mutations = {
   updateFirebaseInitState(state, payload) {
       state.firebaseInit = payload
-      console.log('state.firebaseInit:', state.firebaseInit)
   },
   updateAuthState(state, payload) {
     state.authState = payload;
   },
   updateUserInfo(state, userInfo) {
-    state.userInfo = userInfo;
+    Object.assign(state.userInfo, userInfo)
   },
   updateNavLeftState(state, payload) {
-    state.navLeftState.open = payload.open
+    state.navLeftState.open ? state.navLeftState.open = false : state.navLeftState.open = true
   },
   updateNavRightState(state, payload) {
     state.navRightState.open = payload.open;

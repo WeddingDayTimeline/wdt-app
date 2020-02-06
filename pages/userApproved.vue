@@ -16,8 +16,8 @@
         <p>
           It looks like there was an issue approving {{ (this.$route.query.email ? (this.$route.query.email + ' for your app.') : 'this user for your app.') }}<br><br>
           If you need further help, please don't hesitate to contact Dolan Internet Group for support.<br><br>
-          <a :href="'mailto:' + DigConfig.dig.supportEmail">{{ DigConfig.dig.supportEmail }}</a><br>
-          <a :href="FormatPhone('link', DigConfig.dig.supportPhone)">{{ FormatPhone('display', DigConfig.dig.supportPhone) }}</a>
+          <a :href="'mailto:' + HubConfig.dig.supportEmail">{{ HubConfig.dig.supportEmail }}</a><br>
+          <a :href="FormatPhone('link', HubConfig.dig.supportPhone)">{{ FormatPhone('display', HubConfig.dig.supportPhone) }}</a>
         </p>
       </div>
     </vs-card>
@@ -30,7 +30,7 @@
 import {mapGetters} from 'vuex'
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
-import digConfig from '~/digConfig.js'
+import hubConfig from '~/hubConfig.js'
 import formatPhone from '~/util/formatPhone.js'
 
 export default {
@@ -42,7 +42,7 @@ export default {
   data() {
     return {
       Loaded: false,
-      DigConfig: digConfig,
+      HubConfig: hubConfig,
       FormatPhone: formatPhone
     };
   },

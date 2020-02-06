@@ -1,16 +1,21 @@
-// FOR LARGE WIDTH BUTTONS. SIMPLY ADD `.full-width-button` class to component.
+// FOR LARGE WIDTH BUTTONS.
 .full-width-button {
     width: 100%;
     max-width: 200px;
 }
 
-// FOR MEDIUM WIDTH BUTTONS. SIMPLY ADD `.med-width-button` class to component.
+// FOR MEDIUM WIDTH BUTTONS.
 .med-width-button {
     width: 50%;
     max-width: 6rem;
 }
 
-// MINI CHECKBOX ADDITION. SIMPLY ADD `.check-mini` class to component. 
+// FOR REGULAR WIDTH BUTTONS. USE THIS CLASS INSTEAD OF VUESAX DEFAULT.
+.reg-width-button {
+    padding: 10px 12px;
+}
+
+// MINI CHECKBOX ADDITION. 
 .check-mini .vs-checkbox {
     width: 1rem;
     height: 1rem;

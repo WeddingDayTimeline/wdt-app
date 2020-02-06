@@ -11,11 +11,12 @@
             <md-icon class="notif-icon">notifications</md-icon>
           </div>
           <div id="user-area-cont" @click="ClickHeaderRight('user')">
-            <div class="user-icon-cont">
-              <div class="user-icon"></div>
+            <div class="user-avatar-cont">
+              <img v-if="GetUserInfo.photo" :src="GetUserInfo.photo">
+              <md-icon v-else class="user-avatar">account_circle</md-icon>
             </div>
             <div class="user-name-cont">
-              <span class="user-name">Brendan</span>
+              <span class="user-name">{{ GetUserInfo.name }}</span>
             </div>
           </div>
         </div>
@@ -25,7 +26,8 @@
           <md-icon class="burger">sort</md-icon>
         </div>
       </aside>
-      <aside id="nav-right" v-click-outside="ClickOutsideNavRight"></aside>
+      <NavRightNotif v-if="GetNavRightState.open && GetNavRightState.mode === 'notif'" :nav-right-open="GetNavRightState.open" v-click-outside="ClickOutsideNavRight" />
+      <NavRightUser v-if="GetNavRightState.open && GetNavRightState.mode === 'user'" :nav-right-open="GetNavRightState.open" :user-info="GetUserInfo" v-click-outside="ClickOutsideNavRight" />
       <main class="main"></main>
     </div>
     <!-- <button @click="LogOut()">Log out</button> -->
@@ -38,12 +40,16 @@ import {mapGetters} from 'vuex'
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
 import Logo from '~/components/Logo.vue'
-import digConfig from '~/digConfig.js';
+import hubConfig from '~/hubConfig.js';
+import NavRightNotif from '~/components/dash/NavRightNotif.vue'
+import NavRightUser from '~/components/dash/NavRightUser.vue'
 
 export default {
   name: 'dash',
   components: {
-    Logo
+    Logo,
+    NavRightNotif,
+    NavRightUser
   },
   data() {
     return {
@@ -52,19 +58,22 @@ export default {
   },
   computed: {
     ...mapGetters({
+      GetUserInfo: 'getUserInfo',
       GetNavRightState: 'getNavRightState',
-      GetNavLeftState: 'getNavLeftState'
+      GetNavLeftState: 'getNavLeftState',
     })
   },
   methods: {
-    CommitUserInfo() {
-      const user = firebase.auth().currentUser;
+    CommitUserInfo(user) {
+      // const user = firebase.auth().currentUser;
       const userInfo = {
         uid: user.uid,
         name: user.displayName,
         email: user.email,
-        photo: user.photoURL || digConfig.user.defaultAvatar
+        photo: user.photoURL || ''
       }
+      console.log('user.photoURL:', user.photoURL);
+      console.log('userInfo.photo:', userInfo.photo);
       this.$store.commit("updateUserInfo", userInfo);
     },
     ClickBurgerCont() {
@@ -84,25 +93,21 @@ export default {
           this.$store.commit("updateNavRightState", payload);
         } else {
         }
-    },
-    LogOut() {
-      setTimeout(() => {
-          firebase.auth().signOut()
-      }, 2000)
     }
   },
   mounted() {
-    this.CommitUserInfo();
+    let vm = this;
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (user) {
+        vm.CommitUserInfo(user);
+      }
+    })
   }
 }
 </script>
 
 
 <style scoped lang="scss">
-
-$layout-margin: 1.2;
-$layout-margin-sum: $layout-margin * 2;
-$header-height: 3;
 
 #dash-page-wrapper {
   display: flex;
@@ -155,11 +160,6 @@ header {
   grid-template-rows: #{$header-height}rem;
 }
 
-#nav-right {
-  grid-area: nav-right;
-  background-color: #394263;
-}
-
 main {
   grid-area: main;
   background-color: #8fd4d9;
@@ -207,7 +207,7 @@ main {
   cursor: pointer;
 }
 
-.user-icon-cont {
+.user-avatar-cont {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -215,12 +215,21 @@ main {
   pointer-events: none;
 }
 
-.user-icon {
+.user-avatar-cont img, .user-avatar {
   width: 2rem;
   height: 2rem;
-  background-color: material-color('blue-grey', '200');
   border-radius: 50%;
   pointer-events: none;
+}
+
+.user-avatar-cont img {
+  background-color: material-color('blue-grey', '200');
+}
+
+.user-avatar {
+  font-size: 2.375rem !important;    // ACTUAL SIZE COMES OUT TO 2 REM 
+  color: material-color('blue-grey', '200') !important;
+  background-color: material-color('blue-grey', '50');
 }
 
 .user-name-cont {

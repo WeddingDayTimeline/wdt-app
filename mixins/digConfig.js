@@ -1,12 +1,12 @@
-import digConfig from '~/digConfig.js'
+import hubConfig from '~/hubConfig.js'
 
 export default {
     data() {
         return {
-            DigConfig: {},
+            HubConfig: {},
         };
     },
     created() {
-        this.DigConfig = digConfig
+        this.HubConfig = hubConfig
     }
 }

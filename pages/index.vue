@@ -57,7 +57,7 @@
         <div v-if="NewUserSlide === 0" id="new-user-slide-0" class="new-user-slide">
           <div class="new-user-slide-text">
             <vs-button class="new-user-slide-main-icon" radius color="success" size="large" type="filled" icon="done"></vs-button><br><br>
-            <span class="new-user-slide-text">Next, lets finish creating your profile...</span>
+            <span class="new-user-slide-text">Next, lets create your profile...</span>
           </div>
           <div class="new-user-slide-btn-cont">
             <vs-button class="med-width-button" color="primary" type="filled" @click="() => { NewUserSlide++ }">Next</vs-button>
@@ -123,7 +123,7 @@ import 'firebase/storage'
 import 'firebase/firestore'
 import Logo from '~/components/Logo.vue'
 import { ValidationProvider, ValidationObserver } from 'vee-validate';
-import digConfig from '~/digConfig.js';
+import hubConfig from '~/hubConfig.js';
 
 export default {
   name: 'auth',
@@ -165,7 +165,7 @@ export default {
       UploadedPhotoURL: '',
       PhotoUploadBtnState: { icon: 'cloud_upload', color: 'primary' },
       OnboardedConfirmed: false,
-      FileSizeLimit: 3000000,    // FALLBACK SET TO 3MB HERE, BUT DON'T CHANGE THIS NUMBER, CHANGE IT IN digConfig.js
+      FileSizeLimit: 3000000,    // FALLBACK SET TO 3MB HERE, BUT DON'T CHANGE THIS NUMBER, CHANGE IT IN hubConfig.js
       NextStepsState: { step1: false, step2: false }
     };
   },
@@ -216,7 +216,7 @@ export default {
         this.PhotoUploadBtnState = { icon: 'cloud_done', color: 'success' }
         setTimeout(() => {
           this.NewUserSlide++;
-        }, 3000);
+        }, hubConfig.ux.completionDelay);
       } else if (state === 'error') {
         this.PhotoUploadBtnState = { icon: 'cloud_off', color: 'danger' }
       }
@@ -568,12 +568,21 @@ export default {
             }
           }, function() {
             // Upload completed successfully
-            // UPDATE VUE DATA WITH 'COMPLETE' STATE AND DOWNLOAD URL
             uploadTask.snapshot.ref.getDownloadURL()
             .then(function(downloadURL) {
+              // UPDATE VUE DATA WITH 'COMPLETE' STATE AND DOWNLOAD URL
               console.log('File available at', downloadURL);
-              vm.PhotoUploadState = 'complete';
               vm.UploadedPhotoURL = downloadURL;
+              vm.PhotoUploadState = 'complete';
+              // UPDATE FIREBASE USER PROFILE WITH NEW photoURL
+              user.updateProfile({
+                photoURL: downloadURL
+              }).catch(function(error) {
+                console.log('caught error while updating user profile photo URL: ', error);
+              });
+            })
+            .catch(function(error) {
+              console.log('caught error while updating user profile photo URL: ', error);
             });
           });
         } else {
@@ -646,12 +655,13 @@ export default {
     }
   },
   created() {
-    // IMPORT FILE SIZE LIMIT FROM digConfig.js
-    const digUser = digConfig.user
+    // IMPORT FILE SIZE LIMIT FROM hubConfig.js
+    const digUser = hubConfig.user
     this.FileSizeLimit = digUser.profilePhotoSizeLimit;
     this.ResetErrorState();
   },
   mounted() {
+    console.log('this.$route.query:', this.$route.query);
     let vm = this;
     firebase.auth().onAuthStateChanged(function(user) {
         // IF USER IS SIGNED IN
