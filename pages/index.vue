@@ -17,7 +17,7 @@
         <ValidationObserver ref="SignUpInObserver" tag="div" v-slot="{ invalid }" slim>
           <div id="input-cont-inner">
             <ValidationProvider class="input-validation-provider" rules="email" mode="lazy" v-slot="{ errors }" ref="EmailValidation">
-              <vs-input class="input" icon-no-border icon="email" :placeholder="SignInMode ? 'Email' : 'Choose an email'" type="email" v-model="Input.Email" autofocus="true" :readonly="DisableFields"/>
+              <vs-input class="input" icon-no-border icon="email" :placeholder="SignInMode ? 'Email' : 'Choose an email'" type="email" v-model="Input.Email" autofocus="true" :readonly="DisableFields || ReauthQuery"/>
               <span class="validation-errors no-click">{{ errors[0] }}</span>
             </ValidationProvider>
             <p v-if="ForgotMode && !ResetPasswordBtnClicked" class="reset-instructions">Please enter the email associated with your account.</p>
@@ -44,11 +44,13 @@
                 Sign in with Google
               </vs-button>
             </div>
-            <div v-if="!PasswordResetEmailSent && !JustSignedUp" id="bottom">
-              {{ SignInMode ? 'Need an account? ' : 'Have an account? ' }}<a :class="SignInMode ? '' : 'primary'" @click="SignUpMode()">{{ SignInMode ? 'Sign up' : 'Sign in' }}</a>
-            </div>
-            <div v-else id="bottom">
-              <a class="primary" @click="SignUpMode('signIn')">Sign in</a>
+            <div v-if="!ReauthQuery" id="bottom">
+              <div v-if="!PasswordResetEmailSent && !JustSignedUp" id="bottom-inner">
+                {{ SignInMode ? 'Need an account? ' : 'Have an account? ' }}<a :class="SignInMode ? '' : 'primary'" @click="SignUpMode()">{{ SignInMode ? 'Sign up' : 'Sign in' }}</a>
+              </div>
+              <div v-else id="bottom-inner">
+                <a class="primary" @click="SignUpMode('signIn')">Sign in</a>
+              </div>
             </div>
           </div>
         </ValidationObserver>
@@ -166,7 +168,9 @@ export default {
       PhotoUploadBtnState: { icon: 'cloud_upload', color: 'primary' },
       OnboardedConfirmed: false,
       FileSizeLimit: 3000000,    // FALLBACK SET TO 3MB HERE, BUT DON'T CHANGE THIS NUMBER, CHANGE IT IN hubConfig.js
-      NextStepsState: { step1: false, step2: false }
+      NextStepsState: { step1: false, step2: false },
+      ReauthQuery: false,
+      ReAuthorized: false
     };
   },
   watch: {
@@ -234,40 +238,72 @@ export default {
   methods: {
     SignIn() {
       let vm = this;
+
+      function updateUI(success) {
+        // IF SUCCESS, GET UI READY
+        if (success) {
+          vm.SubmitBtnColor = 'success';
+        } else {
+          vm.SubmitBtnTempColor('warning');
+          vm.DisableFields = false;
+        }
+        vm.SubmitBtnDisabled = false;
+        vm.Thinking = false;
+      }
+
+      function signInCatchError(error) {
+        console.log('error in signInCatchError(): ', error);
+        // ERRORS FOR VUESAX ALERT COMPONENTS HERE
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        // FIRST, UPDATE UI
+        updateUI(false);
+
+        // DISPLAY ERROR-SPECIFIC MESSAGES TO this.Error
+        if (errorCode === 'auth/wrong-password' || errorCode === 'auth/user-not-found' || errorCode === 'auth/user-disabled') {
+          vm.Error = { Active: true, Type: 0, Text: 'Incorrect email or password.' }
+        } else if (errorCode === 'auth/invalid-email') {
+          vm.Error = { Active: true, Type: 1, Text: 'This seems to be an invalid email. Please try again.' }
+        }
+      }
+
       // CHECK IF FIELDS ARE VALID, USING ValidateSignInUpFields() ASYNC METHOD
       this.ValidateSignInUpFields()
       .then(function(valid) {
         if (valid) {
+
 
           vm.Thinking = true;
           vm.SubmitBtnDisabled = true;
           vm.DisableFields = true;
           vm.Error.Active ? vm.Error.Active = false : null;
           // SIGN INTO FIREBASE WITH EMAIL AND PASSWORD
-          firebase.auth().signInWithEmailAndPassword(vm.Input.Email, vm.Input.Password)
-          .then(function(response) {
-            // IF SUCCESS, GET UI READY
-            vm.SubmitBtnColor = 'success';
-            vm.SubmitBtnDisabled = false;
-            vm.Thinking = false;
-          })
-          .catch(function(error) {
-            // ERRORS FOR VUESAX ALERT COMPONENTS HERE
-            const errorCode = error.code;
-            const errorMessage = error.message;
-            // FIRST, UPDATE UI
-            vm.SubmitBtnTempColor('warning');
-            vm.SubmitBtnDisabled = false;
-            vm.DisableFields = false;
-            vm.Thinking = false;
+          if (vm.ReauthQuery) {
+            const user = firebase.auth().currentUser;
+            const credential = firebase.auth.EmailAuthProvider.credential(
+              user.email, 
+              vm.Input.Password
+            )
 
-            // DISPLAY ERROR-SPECIFIC MESSAGES TO this.Error
-            if (errorCode === 'auth/wrong-password' || errorCode === 'auth/user-not-found' || errorCode === 'auth/user-disabled') {
-              vm.Error = { Active: true, Type: 0, Text: 'Incorrect email or password.' }
-            } else if (errorCode === 'auth/invalid-email') {
-              vm.Error = { Active: true, Type: 1, Text: 'This seems to be an invalid email. Please try again.' }
-            }
-          });
+            user.reauthenticateWithCredential(credential)
+            .then(function(response) {
+              vm.ReAuthorized = true;
+              updateUI(true);
+              vm.OnAuthStateChange('reauth');
+            })
+            .catch(function(error) {
+              signInCatchError(error)
+            });
+          } else {
+            firebase.auth().signInWithEmailAndPassword(vm.Input.Email, vm.Input.Password)
+            .then(function(response) {
+              updateUI(true)
+            })
+            .catch(function(error) {
+              signInCatchError(error)
+            });
+          }
+          
 
         }
       })
@@ -652,6 +688,123 @@ export default {
         Type: 0,
         Text: '',
       }
+    },
+    OnAuthStateChange(calledFrom) {
+      let vm = this;
+      firebase.auth().onAuthStateChanged(function(user) {
+          // IF USER IS SIGNED IN
+          if (user) {
+
+            async function checkIfGoogleSignIn() {
+                // CHECK IF USER WAS SIGNED IN WITH GOOGLE METHOD OR NOT.
+                let provider = user.providerData[0].providerId;
+
+                if (provider === 'google.com') {
+                  // IF SO, TRIGGER NewUserFlow FOR SENDING ADMIN APPROVAL EMAIL
+                  await vm.NewUserFlow(user.email, user.uid, provider);
+                  // AND TRIGGER HasOnBoarded TO SET ONBOARDED STATE IN FIRESTORE USER DOC
+                  await vm.HasOnboarded(user.uid)
+                  .then(function() {
+                    return true
+                  })
+                  .catch(function(error) {
+                    console.log('caught error in vm.HasOnboarded():', error)
+                  });
+                };
+                return true
+            }
+
+            async function checkIfApproved(email, uid) {
+
+                // CHECK IF EMAIL IS ORIGINAL EMAIL FROM SIGNUP (IF NOT, CAN BYPASS isUserApproved CHECK)
+                const getIsOriginal = await vm.$axios({
+                  method: 'get',
+                  url: '/api/firebase/firestore/isOriginalSignUpEmail',
+                  params: {
+                    app: 'dig-hub',
+                    uid: uid,
+                    email: email
+                  }
+                })
+
+                if (getIsOriginal.data.original) {
+                  // CHECK IF USER HAS BEEN APPROVED BY ADMIN YET
+                  const getApproved = await vm.$axios({
+                    method: 'get',
+                    url: '/api/firebase/isUserApproved',
+                    params: {
+                      app: 'dig-hub',
+                      email: email
+                    }
+                  })
+                }
+
+                // CHECK IF USER HAS FINISHED ONBOARDING
+                await vm.CheckIfOnboarded();
+                
+                if (vm.OnboardedConfirmed) {
+                  if (!getIsOriginal.data.original || (getApproved.data.approved && getApproved.data.emailVerified)) {
+                  // IF ONBOARDED IS COMPLETE AND ADMIN HAS APPROVED BY EMAIL LINK, OR IF EMAIL ISN'T THE ORIGINAL EMAIL AT SIGNUP, YOU PASS!
+                    vm.$root.context.redirect('/dash')
+                  } else {
+                    // PREPARE UI & STATE
+                    vm.JustSignedUp = true;
+                    vm.NewUserScreen = true;
+                    vm.NewUserSlide = 3;
+                    vm.SignInMode = true;
+                    vm.Loading = false;
+                    vm.Thinking = false;
+                  }
+                } else {
+                  // PREPARE UI & STATE
+                  vm.JustSignedUp = true;
+                  vm.NewUserScreen = true;
+                  vm.NewUserSlide = 0;
+                  vm.SignInMode = true;
+                  vm.Loading = false;
+                  vm.Thinking = false;
+                }
+            }
+
+            try {
+              // CALL THE FUNCTIONS DECLARED ABOVE, IN ORDER
+
+              if (vm.ReauthQuery && !vm.ReAuthorized) {
+                console.log('vm.ReAuthorized:', vm.ReAuthorized);
+                vm.Loading = false
+                vm.Input.Email = user.email;
+                console.log('vm.Input.Email:', vm.Input.Email);
+              }
+              
+              if (!vm.ReauthQuery || (vm.ReauthQuery && vm.ReAuthorized) ) {
+                console.log('vm.ReAuthorized:', vm.ReAuthorized);
+
+                checkIfGoogleSignIn()
+                .then(function() {
+                  if (calledFrom !== 'reauth') {
+                    checkIfApproved(user.email, user.uid)
+                    .catch(function(error) {
+                      console.log('caught error in mounted() -- checkIfApproved(): ', error);
+                    })
+                  } else {
+                    vm.$root.context.redirect('/dash')
+                  }
+                })
+                .catch(function(error) {
+                  console.log('caught error in mounted() -- checkIfSoogleSignIn(): ', error);
+                })
+
+              }
+            } catch (error) {
+              console.log('caught error in try/catch in mounted(): ', error);
+            }
+
+
+          } else {
+            // User is signed out.
+            vm.Loading = false
+          }
+      })
     }
   },
   created() {
@@ -661,90 +814,11 @@ export default {
     this.ResetErrorState();
   },
   mounted() {
-    console.log('this.$route.query:', this.$route.query);
-    let vm = this;
-    firebase.auth().onAuthStateChanged(function(user) {
-        // IF USER IS SIGNED IN
-        if (user) {
-          async function checkIfGoogleSignIn() {
-              // CHECK IF USER WAS SIGNED IN WITH GOOGLE METHOD OR NOT.
-              let provider = user.providerData[0].providerId;
-
-              if (provider === 'google.com') {
-                // IF SO, TRIGGER NewUserFlow FOR SENDING ADMIN APPROVAL EMAIL
-                await vm.NewUserFlow(user.email, user.uid, provider);
-                // AND TRIGGER HasOnBoarded TO SET ONBOARDED STATE IN FIRESTORE USER DOC
-                await vm.HasOnboarded(user.uid)
-                .then(function() {
-                  return true
-                })
-                .catch(function(error) {
-                  console.log('caught error in vm.HasOnboarded():', error)
-                });
-              };
-              return true
-          }
-
-          async function checkIfApproved(email) {
-              // CHECK IF USER HAS BEEN APPROVED BY ADMIN YET
-              const get = await vm.$axios({
-                method: 'get',
-                url: '/api/firebase/isUserApproved',
-                params: {
-                  app: 'dig-hub',
-                  email: email
-                }
-              })
-
-              // CHECK IF USER HAS FINISHED ONBOARDING
-              await vm.CheckIfOnboarded();
-              
-              if (vm.OnboardedConfirmed) {
-                if (get.data.approved && get.data.emailVerified) {
-                // IF ONBOARDED IS COMPLETE AND ADMIN HAS APPROVED BY EMAIL LINK, YOU PASS!
-                  vm.$root.context.redirect('/dash')
-                } else {
-                  // PREPARE UI & STATE
-                  vm.JustSignedUp = true;
-                  vm.NewUserScreen = true;
-                  vm.NewUserSlide = 3;
-                  vm.SignInMode = true;
-                  vm.Loading = false;
-                  vm.Thinking = false;
-                }
-              } else {
-                // PREPARE UI & STATE
-                vm.JustSignedUp = true;
-                vm.NewUserScreen = true;
-                vm.NewUserSlide = 0;
-                vm.SignInMode = true;
-                vm.Loading = false;
-                vm.Thinking = false;
-              }
-          }
-
-          try {
-            // CALL THE FUNCTIONS DECLARED ABOVE, IN ORDER
-            checkIfGoogleSignIn()
-            .then(function() {
-              checkIfApproved(user.email)
-              .catch(function(error) {
-                console.log('caught error in mounted() -- checkIfApproved():', error);
-              })
-            })
-            .catch(function(error) {
-              console.log('caught error in mounted() -- checkIfSoogleSignIn():', error);
-            })
-          } catch (error) {
-            console.log('caught error in try/catch in mounted()', error);
-          }
-
-
-        } else {
-          // User is signed out.
-          vm.Loading = false
-        }
-    })
+    this.OnAuthStateChange('mounted');
+    if (this.$route.query.reauth) {
+      console.log('this.$route.query:', this.$route.query);
+      this.ReauthQuery = true;
+    } 
   }
 }
 </script>

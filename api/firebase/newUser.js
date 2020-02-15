@@ -15,7 +15,7 @@ export const newUser = (req, res) => {
         sgMail.setApiKey(sendgridApiKey);
         
         let link = `${process.env.PRODUCTION_URL}/api/firebase/approveUser?email=${req.body.email}&app=dig-hub`;
-        let html = (`Someone just signed up for a new account for <strong>${process.env.PROJECT_NAME}</strong> and needs your approval.<br><br>Please visit the link below to approve.<br><br>${link}<br><br>Thanks!<br>Your ${process.env.PROJECT_NAME} bot`);
+        let html = (`${req.body.email} just signed up for a new account for <strong>${process.env.PROJECT_NAME}</strong> and needs your approval.<br><br>Please visit the link below to approve.<br><br>${link}<br><br>Thanks!<br>Your ${process.env.PROJECT_NAME} bot`);
         
         const msg = {
             to: process.env.USER_APPROVAL_EMAIL,
@@ -28,17 +28,17 @@ export const newUser = (req, res) => {
         sgMail.send(msg)
 
 
-        // IF NOT USING GOOGLE SIGNIN, CREATE NEW USER WITH ONBOARDED=FALSE DATA IN FIRESTORE.
-        if (req.body.provider === 'google.com') {
-            let db = admin.firestore();
+        // ADD FIRESTORE DATA. ONBOARDED TRUE IF USED GOOGLE SIGNUP METHOD, ELSE FALSE. ADD ORIGINAL EMAIL TO USER'S DATA.
+        let db = admin.firestore();
 
-            const uid = req.body.uid;
-            const userData = {
-                onboarded: false
-            };
+        const uid = req.body.uid;
+        const userData = {
+            onboarded: req.body.provider === 'google.com' ? true : false,
+            originalEmailAtSignUp: req.body.email 
+        };
 
-            let setDoc = db.collection('users').doc(uid).set(userData);
-        }
+        let setDoc = db.collection('users').doc(uid).set(userData);
+
 
         // FINISH
         res.send({ success: true })

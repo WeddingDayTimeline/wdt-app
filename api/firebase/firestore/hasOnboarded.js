@@ -9,7 +9,7 @@ export const hasOnboarded = (req, res) => {
     
     try {
       
-        // CREATE NEW USER WITH ONBOARDED=FALSE DATA IN FIRESTORE
+        // UPDATE USER WITH ONBOARDED=TRUE DATA IN FIRESTORE
         let db = admin.firestore();
         const uid = req.body.uid;
 
