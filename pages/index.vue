@@ -2,11 +2,11 @@
   <div id="auth-page-wrapper">
     <vs-progress class="progress" v-if="Loading || Thinking" indeterminate :height="3" color="primary"></vs-progress>
     <vs-card id="auth-card">
-      <div v-if="!ForgotMode" id="auth-card-header" slot="header">
-        {{ HeaderCopy }}
-      </div>
-      <div v-if="ForgotMode" id="auth-card-header" slot="header">
-        Reset Password
+      <div id="auth-card-header" slot="header">
+        <vs-alert :active="ReauthQuery">
+          Please confirm your password to continue.
+        </vs-alert>
+        <span v-if="!ReauthQuery">{{ ForgotMode ? 'Reset Password' : HeaderCopy }}</span>
       </div>
       <div v-if="!NewUserScreen" id="logo-cont">
         <div id="logo">
@@ -15,7 +15,7 @@
       </div>
       <div v-if="!NewUserScreen" id="input-cont" :class="Loading ? 'mostly-hidden' : ''">
         <ValidationObserver ref="SignUpInObserver" tag="div" v-slot="{ invalid }" slim>
-          <div id="input-cont-inner">
+          <div id="input-cont-inner" :class="ForgotMode ? 'forgot' : ''">
             <ValidationProvider class="input-validation-provider" rules="email" mode="lazy" v-slot="{ errors }" ref="EmailValidation">
               <vs-input class="input" icon-no-border icon="email" :placeholder="SignInMode ? 'Email' : 'Choose an email'" type="email" v-model="Input.Email" autofocus="true" :readonly="DisableFields || ReauthQuery"/>
               <span class="validation-errors no-click">{{ errors[0] }}</span>
@@ -37,16 +37,16 @@
             <vs-button v-if="SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="SignIn()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor === 'success' ? '' : 'Sign in' }}</vs-button>
             <vs-button v-if="!SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="SignUp()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor === 'success' ? '' : 'Create Account' }}</vs-button>
             <vs-button v-if="ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="ResetPassword()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor !== 'success' ? 'Reset Password' : 'Email Sent' }}</vs-button>
-            <div id="google-option-cont">
+            <div v-if="!ForgotMode" id="google-option-cont">
               <div class="or-cont"><hr><span class="or">or</span><hr></div>
-              <vs-button v-if="!ForgotMode" class="google-signin-btn full-width-button" color="#4285F4" type="flat" @click="GoogleSignIn()" :disabled="SubmitBtnDisabled">
+              <vs-button class="google-signin-btn full-width-button" color="#4285F4" type="flat" @click="GoogleSignIn()" :disabled="SubmitBtnDisabled">
                 <div class="google-logo"></div>
                 Sign in with Google
               </vs-button>
             </div>
-            <div v-if="!ReauthQuery" id="bottom">
+            <div v-if="!ReauthQuery || (ReauthQuery && ForgotMode)" id="bottom" :class="ForgotMode ? 'forgot' : ''">
               <div v-if="!PasswordResetEmailSent && !JustSignedUp" id="bottom-inner">
-                {{ SignInMode ? 'Need an account? ' : 'Have an account? ' }}<a :class="SignInMode ? '' : 'primary'" @click="SignUpMode()">{{ SignInMode ? 'Sign up' : 'Sign in' }}</a>
+                {{ BottomCopy.One }}<a :class="SignInMode ? '' : 'primary'" @click="SignUpMode()">{{ BottomCopy.Two }}</a>
               </div>
               <div v-else id="bottom-inner">
                 <a class="primary" @click="SignUpMode('signIn')">Sign in</a>
@@ -233,6 +233,15 @@ export default {
       } else {
         return this.NewUserSlide !== 3 ? 'Create Profile' : 'Next Steps'
       }
+    },
+    BottomCopy() {
+      if (this.ReauthQuery) {
+        return { One: '', Two: 'Back' }
+      } else if (this.SignInMode) {
+        return { One: 'Need an account? ', Two: 'Sign up' }
+      } else {
+        return { One: 'Have an account? ', Two: 'Sign in' }
+      }
     }
   },
   methods: {
@@ -414,13 +423,13 @@ export default {
       this.Input.Email = '';
       this.Input.Password = '';
 
-      if (toMode === null) {
+      if (toMode === null && !this.ReauthQuery) {
         if (this.SignInMode) {
           this.SignInMode = false;
         } else {
           this.SignInMode = true
         }
-      } else if (toMode === 'signIn') {
+      } else if (toMode === 'signIn' || this.ReauthQuery) {
         // PREPARE UI
         this.SignInMode = true;
         this.SubmitBtnColor = 'primary';
@@ -770,14 +779,11 @@ export default {
               // CALL THE FUNCTIONS DECLARED ABOVE, IN ORDER
 
               if (vm.ReauthQuery && !vm.ReAuthorized) {
-                console.log('vm.ReAuthorized:', vm.ReAuthorized);
                 vm.Loading = false
                 vm.Input.Email = user.email;
-                console.log('vm.Input.Email:', vm.Input.Email);
               }
               
               if (!vm.ReauthQuery || (vm.ReauthQuery && vm.ReAuthorized) ) {
-                console.log('vm.ReAuthorized:', vm.ReAuthorized);
 
                 checkIfGoogleSignIn()
                 .then(function() {
@@ -816,7 +822,6 @@ export default {
   mounted() {
     this.OnAuthStateChange('mounted');
     if (this.$route.query.reauth) {
-      console.log('this.$route.query:', this.$route.query);
       this.ReauthQuery = true;
     } 
   }
@@ -950,6 +955,10 @@ export default {
   margin-top: 4rem;
   color: material-color('blue-grey', '300');
   cursor: default;
+}
+
+#bottom.forgot {
+  margin-top: .5rem;
 }
 
 #bottom a {
