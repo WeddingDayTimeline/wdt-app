@@ -39,7 +39,17 @@
             </div>
           </div>
           <div id="profile-photo-section" class="section">
-            <span class="label">Profile photo</span>
+            <span class="label">Profile photo</span><span :class="EditPhoto ? 'hide' : ''" @click="ClickEditPhoto()"><md-icon class="email-edit-icon">edit</md-icon></span><br>
+            <img v-if="GetUserInfo.photo" :src="GetUserInfo.photo">
+            <div v-if="EditPhoto" class="edit-area">
+              <ValidationObserver ref="PhotoObserver" tag="div" v-slot="{ invalid }" slim>
+                <ValidationProvider rules="required|email" mode="lazy" v-slot="{ errors }" ref="EmailRequired">
+                  <input type="file" id="file" @change="UpdateProfilePhoto($event)" hidden ref="File" />
+                  <vs-progress v-if="PhotoUploadState === 'uploading'" :percent="PhotoUploadProgress" color="#cfd8dc"></vs-progress>
+                </ValidationProvider>
+                <vs-button class="reg-width-button" :class="ButtonColor === 'success' ? 'no-click' : ''" :color="ButtonColor" @click="UpdateEmail()" :icon="ButtonColor === 'success' ? 'done' : (ButtonColor === 'danger' ? 'error' : '')" :disabled="DisableButtons">{{ ButtonColor === 'success' ? '' : 'Update email' }}</vs-button>
+              </ValidationObserver>
+            </div>
           </div>
           <div id="profile-password-section" class="section">
             <span class="label">Password</span>
@@ -78,6 +88,7 @@ export default {
       ProfileSettingsExpanded: false,
       EditDisplayName: false,
       EditEmail: false,
+      EditPhoto: false,
       Input: {
         Name: '',
         Email: ''
@@ -94,7 +105,7 @@ export default {
   },
   computed: {
     ...mapGetters({
-    //   GetUserInfo: 'getUserInfo',
+      GetUserInfo: 'getUserInfo',
     })
   },
   methods: {
@@ -112,6 +123,10 @@ export default {
       ClickEditEmail() {
         if (!this.EditEmail) { this.EditEmail = true }
         else if (this.EditEmail) { this.EditEmail = false }
+      },
+      ClickEditPhoto() {
+        if (!this.EditPhoto) { this.EditPhoto = true }
+        else if (this.EditPhoto) { this.EditPhoto = false }
       },
       UpdateUI(state) {    // TAKES 'enable', 'success', 'disable', 'error'
         let vm =this;

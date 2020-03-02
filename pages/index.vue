@@ -81,30 +81,31 @@
               </div>
           </div>
         </ValidationObserver>
-          <div v-if="NewUserSlide === 2" id="new-user-slide-2" class="new-user-slide">
-              <div class="new-user-slide-text">
-                <vs-button v-if="!UploadedPhotoURL" class="new-user-slide-main-icon" radius :color="PhotoUploadState === null ? 'success' : PhotoUploadBtnState.color" size="large" type="filled" icon="done"></vs-button>
-                <img v-if="UploadedPhotoURL" :src="UploadedPhotoURL" class="uploaded-img" /><br><br>
-                <span :style="{ opacity: (PhotoUploadState === null ? 1 : 0) }">Now, you can upload a profile image.<br><br><span class="skip weight300i">...to skip this for now, click Next.</span></span>
-              </div>
-              <div class="new-user-slide-input">
-                  <input type="file" id="file" @change="UpdateProfilePhoto($event)" hidden ref="File" />
-                <vs-progress v-if="PhotoUploadState === 'uploading'" :percent="PhotoUploadProgress" color="#cfd8dc"></vs-progress>
-              </div>
-              <vs-alert v-if="Error.Active" class="error" active="true" color="danger" icon="erroroutline" >
-                {{ Error.Text }}
-              </vs-alert>
-              <div class="new-user-slide-btn-cont">
-                <vs-button class="full-width-button flex-1" :class="PhotoUploadState === 'complete' || PhotoUploadState === 'error' ? 'no-click' : ''" :color="PhotoUploadBtnState.color" :icon="PhotoUploadBtnState.icon" type="filled" @click="ChooseProfilePhoto()">{{ !PhotoUploadState ? 'Choose Photo' : '' }}</vs-button>
-                <vs-button v-if="PhotoUploadState != 'uploading' && PhotoUploadState != 'complete'" class="med-width-button" color="primary" type="filled" @click="() => { NewUserSlide++ }" :disabled="PhotoUploadState === 'uploading' ? true : false">Next</vs-button>
-              </div>
-          </div>
+        <div v-if="NewUserSlide === 2" id="new-user-slide-2" class="new-user-slide">
+            <!-- <div class="new-user-slide-text">
+              <vs-button v-if="!UploadedPhotoURL" class="new-user-slide-main-icon" radius :color="PhotoUploadState === null ? 'success' : PhotoUploadBtnState.color" size="large" type="filled" icon="done"></vs-button>
+              <img v-if="UploadedPhotoURL" :src="UploadedPhotoURL" class="uploaded-img" /><br><br>
+              <span :style="{ opacity: (PhotoUploadState === null ? 1 : 0) }">Now, you can upload a profile image.<br><br><span class="skip weight300i">...to skip this for now, click Next.</span></span>
+            </div>
+            <div class="new-user-slide-input">
+              <input type="file" id="file" @change="UpdateProfilePhoto($event)" hidden ref="File" />
+              <vs-progress v-if="PhotoUploadState === 'uploading'" :percent="PhotoUploadProgress" color="#cfd8dc"></vs-progress>
+            </div>
+            <vs-alert v-if="Error.Active" class="error" active="true" color="danger" icon="erroroutline" >
+              {{ Error.Text }}
+            </vs-alert>
+            <div class="new-user-slide-btn-cont">
+              <vs-button class="full-width-button flex-1" :class="PhotoUploadState === 'complete' || PhotoUploadState === 'error' ? 'no-click' : ''" :color="PhotoUploadBtnState.color" :icon="PhotoUploadBtnState.icon" type="filled" @click="ChooseProfilePhoto()">{{ !PhotoUploadState ? 'Choose Photo' : '' }}</vs-button>
+              <vs-button v-if="PhotoUploadState != 'uploading' && PhotoUploadState != 'complete'" class="med-width-button" color="primary" type="filled" @click="() => { NewUserSlide++ }" :disabled="PhotoUploadState === 'uploading' ? true : false">Next</vs-button>
+            </div> -->
+          <UpdateUserPhoto @NewUserSlideAddIncr="() => { NewUserSlide++ }" />
+        </div>
         <div v-if="NewUserSlide === 3" id="new-user-slide-3" class="new-user-slide">
           <div class="new-user-slide-text">
             <vs-button class="new-user-slide-main-icon" radius color="rgba(31, 116, 255, 0.5)" size="large" type="filled" icon="email"></vs-button><br><br>
             <div class="text-inner">
               <span class="next-steps weight400">Next steps:</span><br><br><br>
-              <vs-button class="mini-number-icon float-left" radius :color="NextStepsState.step1 ? 'success' : 'rgba(31, 116, 255, 0.5)'" :icon="NextStepsState.step1 ? 'done' : ''" size="small" type="filled">{{NextStepsState.step1 ? '' : '1'}}</vs-button><span :class="NextStepsState.step1 ? 'light-text' : ''"> Check your email to verify your account</span><br><br>
+              <vs-button class="mini-number-icon float-left" radius :color="NextStepsState.step1 ? 'success' : 'rgba(31, 116, 255, 0.5)'" :icon="NextStepsState.step1 ? 'done' : ''" size="small" type="filled">{{NextStepsState.step1 ? '' : '1'}}</vs-button><span :class="NextStepsState.step1 ? 'light-text' : ''"> Check your email to verify your account.</span><br><br>
               <vs-button class="mini-number-icon float-left" radius :color="NextStepsState.step2 ? 'success' : 'rgba(31, 116, 255, 0.5)'" :icon="NextStepsState.step2 ? 'done' : ''" size="small" type="filled">{{NextStepsState.step2 ? '' : '2'}}</vs-button><span :class="NextStepsState.step2 ? 'light-text' : ''"> Ask your manager to check their email so they can approve your account.</span><br><br>
               <vs-button class="mini-number-icon float-left" radius color="rgba(31, 116, 255, 0.5)" size="small" type="filled">3</vs-button> Refresh this page, and get started!
             </div>
@@ -124,6 +125,7 @@ import 'firebase/auth'
 import 'firebase/storage'
 import 'firebase/firestore'
 import Logo from '~/components/Logo.vue'
+import UpdateUserPhoto from '~/components/shared/UpdateUserPhoto.vue'
 import { ValidationProvider, ValidationObserver } from 'vee-validate';
 import hubConfig from '~/hubConfig.js';
 
@@ -132,7 +134,8 @@ export default {
   components: {
     Logo,
     ValidationProvider,
-    ValidationObserver
+    ValidationObserver,
+    UpdateUserPhoto
   },
   data() {
     return {
@@ -1011,10 +1014,6 @@ export default {
   color: material-color('blue-grey', '600');
 }
 
-.new-user-slide-text .text-inner {
-
-}
-
 #new-user-slide-1 .new-user-slide-text {
   flex: 1;
   justify-content: center;
@@ -1031,21 +1030,21 @@ export default {
     justify-content: flex-end;
 }
 
-#new-user-slide-2 .new-user-slide-btn-cont {
-    justify-content: space-around;
-}
+// #new-user-slide-2 .new-user-slide-btn-cont {
+//     justify-content: space-around;
+// }
 
 .skip {
   padding-top: .333rem;
   color: material-color('blue-grey', '300');
 }
 
-.uploaded-img {
-  width: 5rem;
-  height: 5rem;
-  margin: 3rem 0;
-  border-radius: 6px;
-}
+// .uploaded-img {
+//   width: 5rem;
+//   height: 5rem;
+//   margin: 3rem 0;
+//   border-radius: 6px;
+// }
 
 .next-steps {
   margin-left: 2.25rem;

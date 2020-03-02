@@ -3,7 +3,7 @@
     <div id="layout" :class="[GetNavRightState.open ? 'nav-right-on' : '', GetNavLeftState.open ? 'nav-left-on' : '']">
       <header class="header">
         <div id="header-left">
-          <button @click="LogOut()"></button>
+          <!-- <button @click="LogOut()"></button> -->
         </div>
         <div id="header-right">
           <!-- <vs-button id="notif-icon-cont" color="primary" type="flat" size="large" icon="notifications"></vs-button> -->
