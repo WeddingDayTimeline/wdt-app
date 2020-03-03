@@ -8,6 +8,9 @@ export default {
         defaultAvatar: '~assets/images/format/default-avatar.svg' 
     },
     ux: {
-        completionDelay: 2500
+        completionDelay: {
+            short: 1250,
+            long: 2500
+        }
     }
 }

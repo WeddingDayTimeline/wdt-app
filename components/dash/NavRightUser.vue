@@ -13,9 +13,9 @@
         </div>
         <div v-if="ProfileSettingsExpanded" id="profile-settings">
           <div id="profile-name-section" class="section">
-            <span class="label">Display name</span><span :class="EditDisplayName ? 'hide' : ''" @click="ClickEditDisplayName()"><md-icon class="display-name-edit-icon">edit</md-icon></span><br>
-            <span v-if="!EditDisplayName" class="display-name-preview no-click">{{ UserInfo.name }}</span>
-            <div v-if="EditDisplayName" class="edit-area">
+            <span class="label">Display name</span><span :class="Editing === 'displayName' ? 'hide' : ''" @click="ClickEdit('displayName')"><md-icon class="display-name-edit-icon">edit</md-icon></span><br>
+            <span v-if="Editing !== 'displayName'" class="display-name-preview no-click">{{ UserInfo.name }}</span>
+            <div v-if="Editing === 'displayName'" class="edit-area">
               <ValidationObserver ref="NameObserver" tag="div" v-slot="{ invalid }" slim>
                 <ValidationProvider rules="required" v-slot="{ errors }" ref="NameRequired">
                   <vs-input class="input" :placeholder="UserInfo.name" type="text" v-model="Input.Name" autofocus="true" :readonly="DisableFields"/>
@@ -26,9 +26,9 @@
             </div>
           </div>
           <div id="profile-email-section" class="section">
-            <span class="label">Email address</span><span :class="EditEmail ? 'hide' : ''" @click="ClickEditEmail()"><md-icon class="email-edit-icon">edit</md-icon></span><br>
-            <span v-if="!EditEmail" class="email-preview no-click">{{ UserInfo.email }}</span>
-            <div v-if="EditEmail" class="edit-area">
+            <span class="label">Email address</span><span :class="Editing === 'email' ? 'hide' : ''" @click="ClickEdit('email')"><md-icon class="email-edit-icon">edit</md-icon></span><br>
+            <span v-if="Editing !== 'email'" class="email-preview no-click">{{ UserInfo.email }}</span>
+            <div v-if="Editing === 'email'" class="edit-area">
               <ValidationObserver ref="EmailObserver" tag="div" v-slot="{ invalid }" slim>
                 <ValidationProvider rules="required|email" mode="lazy" v-slot="{ errors }" ref="EmailRequired">
                   <vs-input class="input" :placeholder="UserInfo.email" type="email" v-model="Input.Email" autofocus="true" :readonly="DisableFields"/>
@@ -39,16 +39,10 @@
             </div>
           </div>
           <div id="profile-photo-section" class="section">
-            <span class="label">Profile photo</span><span :class="EditPhoto ? 'hide' : ''" @click="ClickEditPhoto()"><md-icon class="email-edit-icon">edit</md-icon></span><br>
+            <span class="label">Profile photo</span><span :class="Editing === 'photo' ? 'hide' : ''" @click="ClickEdit('photo')"><md-icon class="email-edit-icon">edit</md-icon></span><br>
             <img v-if="GetUserInfo.photo" :src="GetUserInfo.photo">
-            <div v-if="EditPhoto" class="edit-area">
-              <ValidationObserver ref="PhotoObserver" tag="div" v-slot="{ invalid }" slim>
-                <ValidationProvider rules="required|email" mode="lazy" v-slot="{ errors }" ref="EmailRequired">
-                  <input type="file" id="file" @change="UpdateProfilePhoto($event)" hidden ref="File" />
-                  <vs-progress v-if="PhotoUploadState === 'uploading'" :percent="PhotoUploadProgress" color="#cfd8dc"></vs-progress>
-                </ValidationProvider>
-                <vs-button class="reg-width-button" :class="ButtonColor === 'success' ? 'no-click' : ''" :color="ButtonColor" @click="UpdateEmail()" :icon="ButtonColor === 'success' ? 'done' : (ButtonColor === 'danger' ? 'error' : '')" :disabled="DisableButtons">{{ ButtonColor === 'success' ? '' : 'Update email' }}</vs-button>
-              </ValidationObserver>
+            <div v-if="Editing === 'photo'" class="edit-area">
+              <UpdateUserPhoto @NewUserSlideAddIncr="() => { this.Editing = '' }" />
             </div>
           </div>
           <div id="profile-password-section" class="section">
@@ -66,12 +60,14 @@ import * as firebase from 'firebase/app'
 import 'firebase/auth'
 import hubConfig from '~/hubConfig.js';
 import { ValidationProvider, ValidationObserver } from 'vee-validate';
+import UpdateUserPhoto from '~/components/shared/UpdateUserPhoto.vue'
 
 export default {
   name: 'nav-right-user',
   components: {
     ValidationProvider,
-    ValidationObserver
+    ValidationObserver,
+    UpdateUserPhoto
   },
   props: {
     NavRightOpen: {
@@ -89,6 +85,7 @@ export default {
       EditDisplayName: false,
       EditEmail: false,
       EditPhoto: false,
+      Editing: '',
       Input: {
         Name: '',
         Email: ''
@@ -116,17 +113,9 @@ export default {
       ClickLogOut() {
         firebase.auth().signOut()
       },
-      ClickEditDisplayName() {
-        if (!this.EditDisplayName) { this.EditDisplayName = true }
-        else if (this.EditDisplayName) { this.EditDisplayName = false }
-      },
-      ClickEditEmail() {
-        if (!this.EditEmail) { this.EditEmail = true }
-        else if (this.EditEmail) { this.EditEmail = false }
-      },
-      ClickEditPhoto() {
-        if (!this.EditPhoto) { this.EditPhoto = true }
-        else if (this.EditPhoto) { this.EditPhoto = false }
+      ClickEdit(setting) {
+        if (this.Editing !== setting) { this.Editing = setting }
+        else { this.Editing = '' }
       },
       UpdateUI(state) {    // TAKES 'enable', 'success', 'disable', 'error'
         let vm =this;
@@ -169,8 +158,8 @@ export default {
             vm.UpdateUI('success')
 
             setTimeout(() => {
-              vm.EditDisplayName = false
-            }, hubConfig.ux.completionDelay);
+              vm.Editing = ''
+            }, hubConfig.ux.completionDelay.long);
 
             let userInfo = { name: vm.Input.Name}
             vm.$store.commit("updateUserInfo", userInfo);
@@ -201,8 +190,8 @@ export default {
             vm.UpdateUI('success')
 
             setTimeout(() => {
-              vm.EditEmail = false
-            }, hubConfig.ux.completionDelay);
+              vm.Editing = ''
+            }, hubConfig.ux.completionDelay.long);
 
             let userInfo = { email: vm.Input.Email}
             vm.$store.commit("updateUserInfo", userInfo);

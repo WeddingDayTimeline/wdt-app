@@ -60,10 +60,6 @@ export default {
         this.PhotoUploadBtnState = { icon: 'cloud_queue', color: '#cfd8dc' }
         } else if (state === 'complete') {
         this.PhotoUploadBtnState = { icon: 'cloud_done', color: 'success' }
-        setTimeout(() => {
-            // this.NewUserSlide++;
-            this.$emit('NewUserSlideAddIncr')
-        }, hubConfig.ux.completionDelay);
         } else if (state === 'error') {
         this.PhotoUploadBtnState = { icon: 'cloud_off', color: 'danger' }
         }
@@ -142,9 +138,14 @@ export default {
             // Upload completed successfully
             uploadTask.snapshot.ref.getDownloadURL()
             .then(function(downloadURL) {
-              // UPDATE VUE DATA WITH 'COMPLETE' STATE AND DOWNLOAD URL
+              // UPDATE VUE DATA WITH 'COMPLETE' STATE AND DOWNLOAD URL, AND COMMIT NEW DOWNLOAD URL TO STORE
               console.log('File available at', downloadURL);
               vm.UploadedPhotoURL = downloadURL;
+              let userInfo = { photo: vm.UploadedPhotoURL}
+              vm.$store.commit("updateUserInfo", userInfo);
+              setTimeout(() => {
+                vm.$emit('NewUserSlideAddIncr')
+              }, hubConfig.ux.completionDelay.short);
               vm.PhotoUploadState = 'complete';
               // UPDATE FIREBASE USER PROFILE WITH NEW photoURL
               user.updateProfile({

@@ -223,7 +223,7 @@ export default {
         this.PhotoUploadBtnState = { icon: 'cloud_done', color: 'success' }
         setTimeout(() => {
           this.NewUserSlide++;
-        }, hubConfig.ux.completionDelay);
+        }, hubConfig.ux.completionDelay.long);
       } else if (state === 'error') {
         this.PhotoUploadBtnState = { icon: 'cloud_off', color: 'danger' }
       }
