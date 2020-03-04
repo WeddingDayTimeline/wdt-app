@@ -1,5 +1,5 @@
 import { extend } from "vee-validate";
-import { required, email, required_if, alpha_dash, min } from "vee-validate/dist/rules";
+import { required, email, required_if, alpha_dash, min, regex, is } from "vee-validate/dist/rules";
 
 // INSTALL RULES
 extend("required", {
@@ -25,4 +25,14 @@ extend('alpha_dash', {
 extend('min', {
     ...min,
     message: `8 characters minimum`
+});
+
+extend('regex', {
+    ...regex,
+    message: `Password must be atleast 8 characters and contain (1) lowercase letter, (1) uppercase letter, and (1) number`
+});
+
+extend('is', {
+    ...is,
+    message: `Passwords must match`
 });
