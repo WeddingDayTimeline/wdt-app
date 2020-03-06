@@ -1,0 +1,16 @@
+@import "~bulma/sass/utilities/_all";
+
+//? BEGIN EDITS
+
+$google: #4285F4;
+
+// Setup $colors to use as bulma classes (e.g. 'is-twitter')
+$colors: (
+    "google": ($google, $white)
+);
+
+//? END EDITS
+
+// Import Bulma and Buefy styles
+@import "~bulma";
+@import "~buefy/src/scss/buefy";

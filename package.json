@@ -14,6 +14,9 @@
     "test:e2e": "cross-env TEST=e2e ava --config e2e.config.js"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^1.2.27",
+    "@fortawesome/free-solid-svg-icons": "^5.12.1",
+    "@fortawesome/vue-fontawesome": "^0.1.9",
     "@nuxtjs/axios": "^5.3.6",
     "@nuxtjs/dotenv": "^1.4.0",
     "@nuxtjs/pwa": "^3.0.0-0",
@@ -32,6 +35,8 @@
     "node-sass": "^4.13.1",
     "normalize.css": "^8.0.1",
     "nuxt": "^2.0.0",
+    "nuxt-buefy": "^0.3.23",
+    "nuxt-fontawesome": "^0.4.0",
     "nuxt-webfontloader": "^1.1.0",
     "responsive-loader": "^1.2.0",
     "sass-loader": "^8.0.2",

@@ -1,30 +1,36 @@
 <template>
   <div id="auth-page-wrapper">
     <vs-progress class="progress" v-if="Loading || Thinking" indeterminate :height="3" color="primary"></vs-progress>
-    <vs-card id="auth-card">
-      <div id="auth-card-header" slot="header">
-        <vs-alert :active="ReauthQuery">
+    <div id="auth-card" class="card">
+      <header id="auth-card-header" class="card-header">
+        <b-message :active="ReauthQuery">
           Please confirm your password to continue.
-        </vs-alert>
-        <span v-if="!ReauthQuery">{{ ForgotMode ? 'Reset Password' : HeaderCopy }}</span>
-      </div>
+        </b-message>
+        <p v-if="!ReauthQuery" class="card-header-title">{{ ForgotMode ? 'Reset Password' : HeaderCopy }}</p>
+      </header>
       <div v-if="!NewUserScreen" id="logo-cont">
         <div id="logo">
           DIG hub
         </div>
       </div>
-      <div v-if="!NewUserScreen" id="input-cont" :class="Loading ? 'mostly-hidden' : ''">
+      <div v-if="!NewUserScreen" id="input-cont" class="card-content" :class="Loading ? 'mostly-hidden' : ''">
         <ValidationObserver ref="SignUpInObserver" tag="div" v-slot="{ invalid }" slim>
-          <div id="input-cont-inner" :class="ForgotMode ? 'forgot' : ''">
+          <div id="input-cont-inner" class="content" :class="ForgotMode ? 'forgot' : ''">
             <ValidationProvider class="input-validation-provider" rules="email" mode="lazy" v-slot="{ errors }" ref="EmailValidation">
-              <vs-input class="input" icon-no-border icon="email" :placeholder="SignInMode ? 'Email' : 'Choose an email'" type="email" v-model="Input.Email" autofocus="true" :readonly="DisableFields || ReauthQuery"/>
-              <span class="validation-errors no-click">{{ errors[0] }}</span>
+              <b-field
+                :message="errors[0]"
+              >
+                <b-input class="input" icon="envelope" :placeholder="SignInMode ? 'Email' : 'Choose an email'" type="email" v-model="Input.Email" autofocus="true" :readonly="DisableFields || ReauthQuery"/>
+              </b-field>
             </ValidationProvider>
             <p v-if="ForgotMode && !ResetPasswordBtnClicked" class="reset-instructions">Please enter the email associated with your account.</p>
             <p v-if="ForgotMode && ResetPasswordBtnClicked" class="reset-instructions">Success! Please check your email for your password reset link.</p>
             <ValidationProvider class="input-validation-provider" rules="alpha_dash|min:8" v-slot="{ errors }" ref="PasswordValidation">
-              <vs-input :class="ForgotMode ? 'no-click hide' : ''" class="input" icon-no-border icon="lock" :placeholder="SignInMode ? 'Password' : 'Create a password'" type="password" v-model="Input.Password" :readonly="DisableFields"/>
-              <span class="validation-errors no-click">{{ errors[0] }}</span>
+              <b-field
+                :message="errors[0]"
+              >
+                <b-input :class="ForgotMode ? 'no-click hide' : ''" class="input" icon="unlock-alt" :placeholder="SignInMode ? 'Password' : 'Create a password'" type="password" password-reveal v-model="Input.Password" :readonly="DisableFields" />
+              </b-field>
             </ValidationProvider>
             <a class="forgot forgot-password" :class="!SignInMode || Error.Active || ForgotMode ? 'no-click hide' : ''" @click="ForgotPassword()">Forgot password?</a>
             <vs-alert v-if="Error.Active" class="error no-click" active="true" color="danger" icon="erroroutline" >
@@ -34,15 +40,15 @@
                 <a class="forgot" @click="ForgotPassword()">Forgot your password?</a>
               </span>
             </vs-alert>
-            <vs-button v-if="SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="SignIn()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor === 'success' ? '' : 'Sign in' }}</vs-button>
-            <vs-button v-if="!SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="SignUp()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor === 'success' ? '' : 'Create Account' }}</vs-button>
-            <vs-button v-if="ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'success' ? 'no-click' : ''" :color="SubmitBtnColor" type="relief" @click="ResetPassword()" :icon="SubmitBtnColor === 'success' ? 'done' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor !== 'success' ? 'Reset Password' : 'Email Sent' }}</vs-button>
+            <b-button v-if="SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'is-success' ? 'no-click' : ''" :type="SubmitBtnColor" @click="SignIn()" :icon-left="SubmitBtnColor === 'is-success' ? 'check' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor === 'is-success' ? '' : 'Sign in' }}</b-button>
+            <b-button v-if="!SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'is-success' ? 'no-click' : ''" :type="SubmitBtnColor" @click="SignUp()" :icon-left="SubmitBtnColor === 'is-success' ? 'check' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor === 'is-success' ? '' : 'Create Account' }}</b-button>
+            <b-button v-if="ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'is-success' ? 'no-click' : ''" :type="SubmitBtnColor" @click="ResetPassword()" :icon-left="SubmitBtnColor === 'is-success' ? 'check' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor !== 'is-success' ? 'Reset Password' : 'Email Sent' }}</b-button>
             <div v-if="!ForgotMode" id="google-option-cont">
               <div class="or-cont"><hr><span class="or">or</span><hr></div>
-              <vs-button class="google-signin-btn full-width-button" color="#4285F4" type="flat" @click="GoogleSignIn()" :disabled="SubmitBtnDisabled">
+              <b-button class="google-signin-btn full-width-button" type="is-google" inverted @click="GoogleSignIn()" :disabled="SubmitBtnDisabled">
                 <div class="google-logo"></div>
                 Sign in with Google
-              </vs-button>
+              </b-button>
             </div>
             <div v-if="!ReauthQuery || (ReauthQuery && ForgotMode)" id="bottom" :class="ForgotMode ? 'forgot' : ''">
               <div v-if="!PasswordResetEmailSent && !JustSignedUp" id="bottom-inner">
@@ -58,11 +64,11 @@
       <div v-if="NewUserScreen" id="new-user-screen-cont">
         <div v-if="NewUserSlide === 0" id="new-user-slide-0" class="new-user-slide">
           <div class="new-user-slide-text">
-            <vs-button class="new-user-slide-main-icon" radius color="success" size="large" type="filled" icon="done"></vs-button><br><br>
+            <b-icon class="new-user-slide-main-icon" type="is-success" size="is-large" icon="check"></b-icon><br><br>
             <span class="new-user-slide-text">Next, lets create your profile...</span>
           </div>
           <div class="new-user-slide-btn-cont">
-            <vs-button class="med-width-button" color="primary" type="filled" @click="() => { NewUserSlide++ }">Next</vs-button>
+            <b-button class="med-width-button" type="is-primary" @click="() => { NewUserSlide++ }">Next</b-button>
           </div>
         </div>
         <ValidationObserver ref="NameObserver" tag="div" v-slot="{ invalid }" slim>
@@ -72,47 +78,34 @@
               </div>
               <div class="new-user-slide-input">
                 <ValidationProvider rules="required" v-slot="{ errors }" ref="NameRequired">
-                  <vs-input class="input" placeholder="Full name" type="text" v-model="Input.Name" autofocus="true" :readonly="DisableFields"/>
-                  <span class="validation-errors no-click">{{ errors[0] }}</span>
+                  <b-field
+                    :message="errors[0]"
+                  >
+                    <b-input class="input" placeholder="Full name" type="text" v-model="Input.Name" autofocus="true" :readonly="DisableFields"/>
+                  </b-field>
                 </ValidationProvider>
               </div>
               <div class="new-user-slide-btn-cont">
-                <vs-button class="med-width-button" color="primary" type="filled" @click="UpdateProfileName()">Next</vs-button>
+                <b-button class="med-width-button" type="is-primary" @click="UpdateProfileName()">Next</b-button>
               </div>
           </div>
         </ValidationObserver>
         <div v-if="NewUserSlide === 2" id="new-user-slide-2" class="new-user-slide">
-            <!-- <div class="new-user-slide-text">
-              <vs-button v-if="!UploadedPhotoURL" class="new-user-slide-main-icon" radius :color="PhotoUploadState === null ? 'success' : PhotoUploadBtnState.color" size="large" type="filled" icon="done"></vs-button>
-              <img v-if="UploadedPhotoURL" :src="UploadedPhotoURL" class="uploaded-img" /><br><br>
-              <span :style="{ opacity: (PhotoUploadState === null ? 1 : 0) }">Now, you can upload a profile image.<br><br><span class="skip weight300i">...to skip this for now, click Next.</span></span>
-            </div>
-            <div class="new-user-slide-input">
-              <input type="file" id="file" @change="UpdateProfilePhoto($event)" hidden ref="File" />
-              <vs-progress v-if="PhotoUploadState === 'uploading'" :percent="PhotoUploadProgress" color="#cfd8dc"></vs-progress>
-            </div>
-            <vs-alert v-if="Error.Active" class="error" active="true" color="danger" icon="erroroutline" >
-              {{ Error.Text }}
-            </vs-alert>
-            <div class="new-user-slide-btn-cont">
-              <vs-button class="full-width-button flex-1" :class="PhotoUploadState === 'complete' || PhotoUploadState === 'error' ? 'no-click' : ''" :color="PhotoUploadBtnState.color" :icon="PhotoUploadBtnState.icon" type="filled" @click="ChooseProfilePhoto()">{{ !PhotoUploadState ? 'Choose Photo' : '' }}</vs-button>
-              <vs-button v-if="PhotoUploadState != 'uploading' && PhotoUploadState != 'complete'" class="med-width-button" color="primary" type="filled" @click="() => { NewUserSlide++ }" :disabled="PhotoUploadState === 'uploading' ? true : false">Next</vs-button>
-            </div> -->
           <UpdateUserPhoto @NewUserSlideAddIncr="() => { NewUserSlide++ }" />
         </div>
         <div v-if="NewUserSlide === 3" id="new-user-slide-3" class="new-user-slide">
           <div class="new-user-slide-text">
-            <vs-button class="new-user-slide-main-icon" radius color="rgba(31, 116, 255, 0.5)" size="large" type="filled" icon="email"></vs-button><br><br>
+            <b-button class="new-user-slide-main-icon" color="rgba(31, 116, 255, 0.5)" size="is-large" icon="envelope"></b-button><br><br>
             <div class="text-inner">
               <span class="next-steps weight400">Next steps:</span><br><br><br>
-              <vs-button class="mini-number-icon float-left" radius :color="NextStepsState.step1 ? 'success' : 'rgba(31, 116, 255, 0.5)'" :icon="NextStepsState.step1 ? 'done' : ''" size="small" type="filled">{{NextStepsState.step1 ? '' : '1'}}</vs-button><span :class="NextStepsState.step1 ? 'light-text' : ''"> Check your email to verify your account.</span><br><br>
-              <vs-button class="mini-number-icon float-left" radius :color="NextStepsState.step2 ? 'success' : 'rgba(31, 116, 255, 0.5)'" :icon="NextStepsState.step2 ? 'done' : ''" size="small" type="filled">{{NextStepsState.step2 ? '' : '2'}}</vs-button><span :class="NextStepsState.step2 ? 'light-text' : ''"> Ask your manager to check their email so they can approve your account.</span><br><br>
-              <vs-button class="mini-number-icon float-left" radius color="rgba(31, 116, 255, 0.5)" size="small" type="filled">3</vs-button> Refresh this page, and get started!
+              <b-button class="mini-number-icon float-left" :type="NextStepsState.step1 ? 'is-success' : 'is-info'" :icon="NextStepsState.step1 ? 'check' : ''" size="is-small">{{NextStepsState.step1 ? '' : '1'}}</b-button><span :class="NextStepsState.step1 ? 'light-text' : ''"> Check your email to verify your account.</span><br><br>
+              <b-button class="mini-number-icon float-left" :type="NextStepsState.step2 ? 'is-success' : 'is-info'" :icon="NextStepsState.step2 ? 'check' : ''" size="is-small">{{NextStepsState.step2 ? '' : '2'}}</b-button><span :class="NextStepsState.step2 ? 'light-text' : ''"> Ask your manager to check their email so they can approve your account.</span><br><br>
+              <b-button class="mini-number-icon float-left" type="is-info" size="is-small">3</b-button> Refresh this page, and get started!
             </div>
           </div>
         </div>
       </div>
-    </vs-card>
+    </div>
     <GlobalEvents @keyup.enter="OnKeyUpEnter()"></GlobalEvents>
   </div>
 </template>
@@ -157,7 +150,7 @@ export default {
         Type: 0,
         Text: '',
       },
-      SubmitBtnColor: 'primary',
+      SubmitBtnColor: 'is-primary',
       SubmitBtnDisabled: false,
       ResetPasswordBtnClicked: false,
       PasswordResetEmailSent: false,
@@ -254,9 +247,9 @@ export default {
       function updateUI(success) {
         // IF SUCCESS, GET UI READY
         if (success) {
-          vm.SubmitBtnColor = 'success';
+          vm.SubmitBtnColor = 'is-success';
         } else {
-          vm.SubmitBtnTempColor('warning');
+          vm.SubmitBtnTempColor('is-warning');
           vm.DisableFields = false;
         }
         vm.SubmitBtnDisabled = false;
@@ -345,11 +338,11 @@ export default {
             .then(function(res) {
               if (res) {
                 // PREPARE UI
-                vm.SubmitBtnColor = 'success';
+                vm.SubmitBtnColor = 'is-success';
                 vm.SubmitBtnDisabled = false;
                 vm.Thinking = false;
                 vm.DisableFields = false;
-                vm.SubmitBtnColor = 'success';
+                vm.SubmitBtnColor = 'is-success';
               }
               // SEND VERIFICATION EMAIL TO USER
               vm.SendVerificationEmail();
@@ -372,7 +365,7 @@ export default {
             }
 
             // PREPARE UI
-            vm.SubmitBtnTempColor('warning');
+            vm.SubmitBtnTempColor('is-warning');
             vm.SubmitBtnDisabled = false;
             vm.Thinking = false;
           });
@@ -435,7 +428,7 @@ export default {
       } else if (toMode === 'signIn' || this.ReauthQuery) {
         // PREPARE UI
         this.SignInMode = true;
-        this.SubmitBtnColor = 'primary';
+        this.SubmitBtnColor = 'is-primary';
         this.PasswordResetEmailSent = false;
       } 
 
@@ -468,7 +461,7 @@ export default {
           firebase.auth().sendPasswordResetEmail(vm.Input.Email)
           .then(function() {
             // PREPARE UI
-            vm.SubmitBtnColor = 'success';
+            vm.SubmitBtnColor = 'is-success';
             vm.SubmitBtnDisabled = false;
             vm.Thinking = false;
             vm.PasswordResetEmailSent = true;
@@ -487,7 +480,7 @@ export default {
             }
 
             // PREPARE UI 
-            vm.SubmitBtnTempColor('warning');
+            vm.SubmitBtnTempColor('is-warning');
             vm.SubmitBtnDisabled = false;
             vm.Thinking = false;
           });
@@ -501,7 +494,7 @@ export default {
       // UPON ERROR, TEMPORARILY CHANGE COLOR, THEN CHANGE IT BACK TO PRIMARY
       this.SubmitBtnColor = color;
       setTimeout(() => {
-        this.SubmitBtnColor = 'primary';
+        this.SubmitBtnColor = 'is-primary';
       }, 4500);
     },
     OnKeyUpEnter() {

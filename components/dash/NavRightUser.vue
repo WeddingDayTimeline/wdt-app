@@ -27,11 +27,16 @@
           </div>
           <div id="profile-email-section" class="section">
             <span class="label">Email address</span><span @click="ClickEdit('email')"><md-icon>{{ Editing !== 'email' ? 'edit' : 'close' }}</md-icon></span><br>
-            <span v-if="Editing !== 'email'" class="email-preview no-click">{{ UserInfo.email }}</span>
+            <span v-if="Editing === 'email'">Current email:<br></span>
+            <span class="email-preview no-click">{{ UserInfo.email }}</span>
             <div v-if="Editing === 'email'" class="edit-area">
               <ValidationObserver ref="EmailObserver" tag="div" v-slot="{ invalid }" slim>
-                <ValidationProvider rules="required|email" mode="lazy" v-slot="{ errors }" ref="EmailRequired">
-                  <vs-input class="input" :placeholder="UserInfo.email" type="email" v-model="Input.Email" autofocus="true" :readonly="DisableFields"/>
+                <ValidationProvider rules="required|email" mode="lazy" v-slot="{ errors }" ref="EmailRequired1">
+                  <vs-input class="input" placeholder="new email" type="email" v-model="Input.Email1" autofocus="true" :readonly="DisableFields"/>
+                  <span class="validation-errors no-click">{{ errors[0] }}</span>
+                </ValidationProvider>
+                <ValidationProvider :rules="{ required: true, email: true, is: Input.Email1 }" mode="lazy" v-slot="{ errors }" ref="EmailRequired2">
+                  <vs-input class="input" placeholder="re-enter email" type="email" v-model="Input.Email2" :readonly="DisableFields"/>
                   <span class="validation-errors no-click">{{ errors[0] }}</span>
                 </ValidationProvider>
                 <vs-button class="reg-width-button" :class="ButtonColor === 'success' ? 'no-click' : ''" :color="ButtonColor" @click="UpdateEmail()" :icon="ButtonColor === 'success' ? 'done' : (ButtonColor === 'danger' ? 'error' : '')" :disabled="DisableButtons">{{ ButtonColor === 'success' ? '' : 'Update email' }}</vs-button>
@@ -49,15 +54,20 @@
             <span class="label">Password</span><span @click="ClickEdit('password')"><md-icon>{{ Editing !== 'password' ? 'edit' : 'close' }}</md-icon></span><br>
             <div v-if="Editing === 'password'" class="edit-area">
               <ValidationObserver ref="PasswordObserver" tag="div" v-slot="{ invalid }" slim>
+                <ValidationProvider :rules="{ required: true }" mode="lazy" v-slot="{ errors }" ref="OldPasswordRequired">
+                  <vs-input class="input" placeholder="old password" type="password" v-model="Input.PasswordOld" autofocus="true" :readonly="DisableFields"/>
+                  <span class="validation-errors no-click">{{ errors[0] }}</span>
+                </ValidationProvider>
+                <br><br>
                 <ValidationProvider :rules="{ required: true, regex: /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.{8,})/ }" mode="lazy" v-slot="{ errors }" ref="PasswordRequired1">
-                  <vs-input class="input" placeholder="new password" type="password" v-model="Input.Password1" autofocus="true" :readonly="DisableFields"/>
+                  <vs-input class="input" placeholder="new password" type="password" v-model="Input.PasswordNew1" :readonly="DisableFields"/>
                   <span class="validation-errors no-click">{{ errors[0] }}</span>
                 </ValidationProvider>
-                <ValidationProvider :rules="{ required: true, is: Input.Password1 }" mode="lazy" v-slot="{ errors }" ref="PasswordRequired2">
-                  <vs-input class="input" placeholder="re-enter password" type="password" v-model="Input.Password2" autofocus="true" :readonly="DisableFields"/>
+                <ValidationProvider :rules="{ required: true, is: Input.PasswordNew1 }" mode="lazy" v-slot="{ errors }" ref="PasswordRequired2">
+                  <vs-input class="input" placeholder="re-enter password" type="password" v-model="Input.PasswordNew2" :readonly="DisableFields"/>
                   <span class="validation-errors no-click">{{ errors[0] }}</span>
                 </ValidationProvider>
-                <vs-button class="reg-width-button" :class="ButtonColor === 'success' ? 'no-click' : ''" :color="ButtonColor" @click="UpdatePassword(Input.Password2)" :icon="ButtonColor === 'success' ? 'done' : (ButtonColor === 'danger' ? 'error' : '')" :disabled="DisableButtons">{{ ButtonColor === 'success' ? '' : 'Update password' }}</vs-button>
+                <vs-button class="reg-width-button" :class="ButtonColor === 'success' ? 'no-click' : ''" :color="ButtonColor" @click="UpdatePassword" :icon="ButtonColor === 'success' ? 'done' : (ButtonColor === 'danger' ? 'error' : '')" :disabled="DisableButtons">{{ ButtonColor === 'success' ? '' : 'Update password' }}</vs-button>
               </ValidationObserver>
             </div>
           </div>
@@ -98,9 +108,11 @@ export default {
       Editing: '',
       Input: {
         Name: '',
-        Email: '',
-        Password1: '',
-        Password2: ''
+        Email1: '',
+        Email2: '',
+        PasswordOld: '',
+        PasswordNew1: '',
+        PasswordNew2: ''
       },
       ButtonColor: 'primary',
       DisableFields: false,
@@ -196,7 +208,7 @@ export default {
           // UPDATE PROFILE NAME UPON COMPLETING FORM, THEN GO TO NEXT NEW-USER SLIDE, THEN CALL HasOnboarded FUNCTION TO SET FIREBASE USER DOC TO ONBOARDED:TRUE
           const user = firebase.auth().currentUser;
 
-          user.updateEmail(vm.Input.Email)
+          user.updateEmail(vm.Input.Email2)
           .then(function() {
             // UPDATE UI
             vm.UpdateUI('success')
@@ -220,7 +232,7 @@ export default {
           });
         }
       },
-      async UpdatePassword(newPassword) {
+      async UpdatePassword() {
         let vm = this;
         // CHECK IF NAME FIELD IS VALID IF SO, COMPLETE FUNCTION
         const isValid = await vm.$refs.PasswordObserver.validate();
@@ -231,10 +243,20 @@ export default {
           // UPDATE UI
           vm.UpdateUI('disable')
 
-          // UPDATE PROFILE NAME UPON COMPLETING FORM, THEN GO TO NEXT NEW-USER SLIDE, THEN CALL HasOnboarded FUNCTION TO SET FIREBASE USER DOC TO ONBOARDED:TRUE
-          
+          // First, reauthenticate to avoid needing to check if reauth is needed and redirect to login page.
           const user = firebase.auth().currentUser;
+          
+          const credential = firebase.auth.EmailAuthProvider.credential(
+            user.email, 
+            vm.Input.PasswordOld
+          )
+
+          user.reauthenticateWithCredential(credential)
+          .then(function(response) {
+          // Then update new password
+          const newPassword = vm.Input.PasswordNew2;
           console.log('newPassword:', newPassword);
+          
           user.updatePassword(newPassword)
           .then(function() {
             // UPDATE UI
@@ -246,14 +268,17 @@ export default {
           }).catch(function(error) {
             if (error.code === 'auth/requires-recent-login') {
               vm.$root.context.redirect('/?reauth=true&type=password')
-              // MUST USE FIREBASE REAUTHORIZE FUNCTION INSTEAD OF UST REDIRECTING TO THE SIGN-IN PAGE TO RE-SIGN IN MANUALLY,
-              // SO REDIRECT WITH CORRECT PARAMS AND MODIFY FLOW BASED ON THOSE PARAMS WITH CONDITIONS IN MULTIPLE PLACES
-              // THEN REDIRECT BACK TO /dash with correct query string to pickup where left off, or do it automatically by saving the temp email in state
             }
             // UPDATE UI
             vm.UpdateUI('error')
             console.log('caught error while updating user profile email from profile settings: ', error);
           });
+
+          })
+          .catch(function(error) {
+            console.log('caught error while reauthenticating from profile settings > change password: ', error);
+          })
+
         }
       }
   }

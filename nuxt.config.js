@@ -54,6 +54,8 @@ export default {
     '@nuxtjs/dotenv',
     '@nuxtjs/style-resources',
     'nuxt-webfontloader',
+    'nuxt-buefy',
+    'nuxt-fontawesome',
   ],
 
   /*
@@ -87,7 +89,7 @@ export default {
   ** Build configuration
   */
 
-    /*
+  /*
   ** Style Resources (Sass loader)
   */
   styleResources: {
@@ -97,18 +99,38 @@ export default {
   },
 
   /*
-** Web Font Loader
-*/
+  ** Web Font Loader
+  */
   webfontloader: {
     google: {
       families: ['Roboto:300, 300i,400,500,600,700&display=swap']
     }
   },
 
+  /*
+  ** Buefy
+  */
+  buefy: {
+    materialDesignIcons: false,
+    defaultIconPack: 'fas',
+    defaultIconComponent: 'font-awesome-icon'
+  },
 
   /*
-** Nuxt Build
-*/
+  ** Fontawesome
+  */
+  fontawesome: {
+    imports: [
+      {
+        set: '@fortawesome/free-solid-svg-icons',
+        icons: ['fas']
+      }
+    ]
+  },
+
+  /*
+  ** Nuxt Build
+  */
   build: {
     /*
     ** You can extend webpack config here
