@@ -1,7 +1,14 @@
 <template>
   <div class="update-user-photo-cont">
         <div class="text-cont">
-            <vs-button v-if="!UploadedPhotoURL" class="main-icon" radius :color="PhotoUploadState === null ? 'success' : PhotoUploadBtnState.color" size="large" type="filled" icon="done"></vs-button>
+            <b-icon
+                v-if="!UploadedPhotoURL"
+                :type="PhotoUploadState === null ? 'is-success' : PhotoUploadBtnState.color"
+                icon="check"
+                size="is-large">
+            </b-icon>
+            <!-- <b-button v-if="!UploadedPhotoURL" class="main-icon" rounded :type="PhotoUploadState === null ? 'success' : PhotoUploadBtnState.color" size="is-large" icon="check"></b-button> -->
+            <!-- <vs-button v-if="!UploadedPhotoURL" class="main-icon" radius :color="PhotoUploadState === null ? 'success' : PhotoUploadBtnState.color" size="large" type="filled" icon="done"></vs-button> -->
             <img v-if="UploadedPhotoURL" :src="UploadedPhotoURL" class="uploaded-img" /><br><br>
             <span :style="{ opacity: (PhotoUploadState === null ? 1 : 0) }">Now, you can upload a profile image.<br><br><span class="skip weight300i">...to skip this for now, click Next.</span></span>
         </div>
@@ -9,12 +16,17 @@
             <input type="file" id="file" @change="UpdateProfilePhoto($event)" hidden ref="File" />
             <vs-progress v-if="PhotoUploadState === 'uploading'" :percent="PhotoUploadProgress" color="#cfd8dc"></vs-progress>
         </div>
-        <vs-alert v-if="Error.Active" class="error" active="true" color="danger" icon="erroroutline" >
+        <b-message v-if="Error.Active" type="is-danger" size="is-small" has-icon>
+          {{ Error.Text }}
+        </b-message>
+        <!-- <vs-alert v-if="Error.Active" class="error" active="true" color="danger" icon="erroroutline" >
             {{ Error.Text }}
-        </vs-alert>
+        </vs-alert> -->
         <div class="btn-cont">
-            <vs-button class="full-width-button flex-1" :class="PhotoUploadState === 'complete' || PhotoUploadState === 'error' ? 'no-click' : ''" :color="PhotoUploadBtnState.color" :icon="PhotoUploadBtnState.icon" type="filled" @click="ChooseProfilePhoto()">{{ !PhotoUploadState ? 'Choose Photo' : '' }}</vs-button>
-            <vs-button v-if="PhotoUploadState != 'uploading' && PhotoUploadState != 'complete'" class="med-width-button" color="primary" type="filled" @click="$emit('NewUserSlideAddIncr')" :disabled="PhotoUploadState === 'uploading' ? true : false">Next</vs-button>
+            <b-button :class="PhotoUploadState === 'complete' || PhotoUploadState === 'error' ? 'no-click' : ''" :type="PhotoUploadBtnState.color" :icon-left="PhotoUploadBtnState.icon" @click="ChooseProfilePhoto()">{{ !PhotoUploadState ? 'Choose Photo' : '' }}</b-button>
+            <!-- <vs-button class="full-width-button flex-1" :class="PhotoUploadState === 'complete' || PhotoUploadState === 'error' ? 'no-click' : ''" :color="PhotoUploadBtnState.color" :icon="PhotoUploadBtnState.icon" type="filled" @click="ChooseProfilePhoto()">{{ !PhotoUploadState ? 'Choose Photo' : '' }}</vs-button> -->
+            <b-button v-if="PhotoUploadState != 'uploading' && PhotoUploadState != 'complete'" type="is-primary" @click="$emit('NewUserSlideAddIncr')" :disabled="PhotoUploadState === 'uploading' ? true : false">Next</b-button>
+            <!-- <vs-button v-if="PhotoUploadState != 'uploading' && PhotoUploadState != 'complete'" class="med-width-button" color="primary" type="filled" @click="$emit('NewUserSlideAddIncr')" :disabled="PhotoUploadState === 'uploading' ? true : false">Next</vs-button> -->
         </div>
   </div>
 </template>
@@ -57,11 +69,11 @@ export default {
         // CHANGE PHOTO UPLOAD BUTTON ICON AND COLOR BASED ON UPLOAD STATE
         let state = this.PhotoUploadState;
         if (state === 'uploading') {
-        this.PhotoUploadBtnState = { icon: 'cloud_queue', color: '#cfd8dc' }
+        this.PhotoUploadBtnState = { icon: 'cloud_queue', color: 'is-info' }
         } else if (state === 'complete') {
-        this.PhotoUploadBtnState = { icon: 'cloud_done', color: 'success' }
+        this.PhotoUploadBtnState = { icon: 'cloud_done', color: 'is-success' }
         } else if (state === 'error') {
-        this.PhotoUploadBtnState = { icon: 'cloud_off', color: 'danger' }
+        this.PhotoUploadBtnState = { icon: 'cloud_off', color: 'is-danger' }
         }
     }
   },

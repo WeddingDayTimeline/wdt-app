@@ -46,28 +46,34 @@
 // GOOGLE SIGN-IN BUTTON AS VUESAX BUTTON
 .google-signin-btn {
     color: material-color('blue-grey', '600');
-}
-  
-.google-signin-btn .google-logo {
-    width: calc(1rem + 6px);
-    height: calc(1rem + 6px);
-    margin: 0 .666rem 0 0;
-    background-image: $google-logo;
-    background-repeat: no-repeat;
-    background-position: center;
-    border-radius: 50%;
-    border: 3px solid transparent;
-}
-  
-.google-signin-btn.isActive .google-logo {
-    background-color: $white;
-    border: 3px solid $white;
-}
 
-.google-signin-btn .vs-button-text {
-    display: flex !important;
-    align-items: center;
-    width: max-content !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
+    & > span {
+        display: flex;
+        align-items: center;
+    }
+
+    & .google-logo {
+        display: inline-block;
+        width: calc(1rem + 6px);
+        height: calc(1rem + 6px);
+        margin: 0 .5rem 0 0;
+        background-image: $google-logo;
+        background-repeat: no-repeat;
+        background-position: center;
+        border-radius: 50%;
+        border: 3px solid transparent;
+    }
+
+    &.isActive .google-logo {
+        background-color: $white;
+        border: 3px solid $white;
+    }
+
+    & .vs-button-text {
+        display: flex !important;
+        align-items: center;
+        width: max-content !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
 }

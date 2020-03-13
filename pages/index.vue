@@ -33,13 +33,13 @@
               </b-field>
             </ValidationProvider>
             <a class="forgot forgot-password" :class="!SignInMode || Error.Active || ForgotMode ? 'no-click hide' : ''" @click="ForgotPassword()">Forgot password?</a>
-            <vs-alert v-if="Error.Active" class="error no-click" active="true" color="danger" icon="erroroutline" >
+            <b-message v-if="Error.Active" type="is-danger" size="is-small" has-icon>
               {{ Error.Text }}
               <span v-if="Error.Type === 0 || Error.Type === 3">
                 <br>
                 <a class="forgot" @click="ForgotPassword()">Forgot your password?</a>
               </span>
-            </vs-alert>
+            </b-message>
             <b-button v-if="SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'is-success' ? 'no-click' : ''" :type="SubmitBtnColor" @click="SignIn()" :icon-left="SubmitBtnColor === 'is-success' ? 'check' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor === 'is-success' ? '' : 'Sign in' }}</b-button>
             <b-button v-if="!SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'is-success' ? 'no-click' : ''" :type="SubmitBtnColor" @click="SignUp()" :icon-left="SubmitBtnColor === 'is-success' ? 'check' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor === 'is-success' ? '' : 'Create Account' }}</b-button>
             <b-button v-if="ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'is-success' ? 'no-click' : ''" :type="SubmitBtnColor" @click="ResetPassword()" :icon-left="SubmitBtnColor === 'is-success' ? 'check' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor !== 'is-success' ? 'Reset Password' : 'Email Sent' }}</b-button>
@@ -64,7 +64,7 @@
       <div v-if="NewUserScreen" id="new-user-screen-cont">
         <div v-if="NewUserSlide === 0" id="new-user-slide-0" class="new-user-slide">
           <div class="new-user-slide-text">
-            <b-icon class="new-user-slide-main-icon" type="is-success" size="is-large" icon="check"></b-icon><br><br>
+            <b-icon class="new-user-slide-main-icon" type="is-success" custom-size="is-large" icon="check"></b-icon>
             <span class="new-user-slide-text">Next, lets create your profile...</span>
           </div>
           <div class="new-user-slide-btn-cont">
@@ -850,10 +850,12 @@ export default {
 }
 
 #auth-card {
+  display: flex;
+  flex-direction: column;
   width: 22rem;
   max-width: 100%;
   height: auto;
-  min-height: 22rem;
+  min-height: 16rem;
 }
 
 #auth-card-header {
@@ -866,7 +868,7 @@ export default {
 }
 
 #new-user-screen-cont {
-  height: 100%;
+  flex: 1;
   padding: .666rem;
 }
 
@@ -996,7 +998,7 @@ export default {
 }
 
 .new-user-slide-main-icon {
-  margin: 3rem 0;
+  margin: 2rem 0;
 }
 
 .new-user-slide-text {
@@ -1010,6 +1012,7 @@ export default {
 #new-user-slide-1 .new-user-slide-text {
   flex: 1;
   justify-content: center;
+  padding-top: 3rem;
 }
 
 .new-user-slide-input {
@@ -1021,6 +1024,7 @@ export default {
 .new-user-slide-btn-cont {
     display: flex;
     justify-content: flex-end;
+    margin-top: 3rem;
 }
 
 // #new-user-slide-2 .new-user-slide-btn-cont {

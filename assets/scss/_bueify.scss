@@ -1,6 +1,6 @@
 @import "~bulma/sass/utilities/_all";
 
-//? BEGIN EDITS
+//? BEGIN VARIABLES
 
 $google: #4285F4;
 
@@ -9,7 +9,15 @@ $colors: (
     "google": ($google, $white)
 );
 
-//? END EDITS
+//? END VARIABLES
+
+//? BEGIN CLASSES
+
+.card {
+    border-radius: .2rem;
+}
+
+//? END CLASSES
 
 // Import Bulma and Buefy styles
 @import "~bulma";
