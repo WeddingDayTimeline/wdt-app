@@ -10,7 +10,7 @@
             <!-- <b-button v-if="!UploadedPhotoURL" class="main-icon" rounded :type="PhotoUploadState === null ? 'success' : PhotoUploadBtnState.color" size="is-large" icon="check"></b-button> -->
             <!-- <vs-button v-if="!UploadedPhotoURL" class="main-icon" radius :color="PhotoUploadState === null ? 'success' : PhotoUploadBtnState.color" size="large" type="filled" icon="done"></vs-button> -->
             <img v-if="UploadedPhotoURL" :src="UploadedPhotoURL" class="uploaded-img" /><br><br>
-            <span :style="{ opacity: (PhotoUploadState === null ? 1 : 0) }">Now, you can upload a profile image.<br><br><span class="skip weight300i">...to skip this for now, click Next.</span></span>
+            <span :style="{ opacity: (PhotoUploadState === null ? 1 : 0) }">Now, you can upload a profile image.<br><br><span class="skip fw-300i">...to skip this for now, click Next.</span></span>
         </div>
         <div class="input-cont">
             <input type="file" id="file" @change="UpdateProfilePhoto($event)" hidden ref="File" />
@@ -44,16 +44,16 @@ export default {
   components: {
   },
   props: {
-    // NavRightOpen: {
-    //   type: Boolean,
-    //   required: false
-    // }
+    instance: {
+      type: String,
+      required: true
+    }
   },
   data() {
     return {
       UploadedPhotoURL: '',
       PhotoUploadState: null,
-      PhotoUploadBtnState: { icon: 'cloud_upload', color: 'primary' },
+      PhotoUploadBtnState: { icon: 'cloud-upload-alt', color: 'is-primary' },
       UploadedPhotoURL: '',
       PhotoUploadProgress: 0,
       FileSizeLimit: 3000000,    // FALLBACK SET TO 3MB HERE, BUT DON'T CHANGE THIS NUMBER, CHANGE IT IN hubConfig.js
@@ -69,11 +69,11 @@ export default {
         // CHANGE PHOTO UPLOAD BUTTON ICON AND COLOR BASED ON UPLOAD STATE
         let state = this.PhotoUploadState;
         if (state === 'uploading') {
-        this.PhotoUploadBtnState = { icon: 'cloud_queue', color: 'is-info' }
+        this.PhotoUploadBtnState = { icon: 'cloud-upload-alt', color: 'is-info' }
         } else if (state === 'complete') {
-        this.PhotoUploadBtnState = { icon: 'cloud_done', color: 'is-success' }
+        this.PhotoUploadBtnState = { icon: 'check', color: 'is-success' }
         } else if (state === 'error') {
-        this.PhotoUploadBtnState = { icon: 'cloud_off', color: 'is-danger' }
+        this.PhotoUploadBtnState = { icon: 'exclamation-circle', color: 'is-danger' }
         }
     }
   },
@@ -155,9 +155,13 @@ export default {
               vm.UploadedPhotoURL = downloadURL;
               let userInfo = { photo: vm.UploadedPhotoURL}
               vm.$store.commit("updateUserInfo", userInfo);
+
               setTimeout(() => {
-                vm.$emit('NewUserSlideAddIncr')
+                if (vm.instance === 'CreateProfile') {
+                  vm.$emit('photoUpdated')
+                }
               }, hubConfig.ux.completionDelay.short);
+              
               vm.PhotoUploadState = 'complete';
               // UPDATE FIREBASE USER PROFILE WITH NEW photoURL
               user.updateProfile({

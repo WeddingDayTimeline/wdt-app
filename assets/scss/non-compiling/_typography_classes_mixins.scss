@@ -1,56 +1,84 @@
-// FONT CLASSES
-
-.weight300 {
+// Font Weight
+.fw-300 {
     font-weight: 300;
 }
 
-.weight300i {
-    font-weight: 300;
-    font-style: italic;
-}
-
-.weight400 {
-    font-weight: 400;
-}
-
-.weight500 {
-    font-weight: 500;
-}
-
-.weight600 {
-    font-weight: 600;
-}
-
-.weight700 {
-    font-weight: 700;
-}
-
-
-// FONT MIXINS
-
-@mixin weight300() {
-    font-weight: 300;
-}
-
-@mixin weight300i() {
+.fw-300i {
     font-weight: 300;
     font-style: italic;
 }
 
-@mixin weight400() {
+.fw-400 {
     font-weight: 400;
 }
 
-@mixin weight500() {
+.fw-500 {
     font-weight: 500;
 }
 
-@mixin weight600() {
+.fw-600 {
     font-weight: 600;
 }
 
-@mixin weight700() {
+.fw-700 {
     font-weight: 700;
 }
+
+@mixin fw-300() {
+    font-weight: 300;
+}
+
+@mixin fw-300i() {
+    font-weight: 300;
+    font-style: italic;
+}
+
+@mixin fw-400() {
+    font-weight: 400;
+}
+
+@mixin fw-500() {
+    font-weight: 500;
+}
+
+@mixin fw-600() {
+    font-weight: 600;
+}
+
+@mixin fw-700() {
+    font-weight: 700;
+}
+
+
+// Font Size
+.fs-1 {
+    font-size: 1rem;
+}
+
+.fs-2 {
+    font-size: 1.25rem;
+}
+
+.fs-3 {
+    font-size: 1.5rem;
+}
+
+.fs-4 {
+    font-size: 2rem;
+}
+
+.fs-5 {
+    font-size: 2.5rem;
+}
+
+.fs-6 {
+    font-size: 3rem;
+}
+
+.fs-7 {
+    font-size: 4rem;
+}
+
+
 
 
