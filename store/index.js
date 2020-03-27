@@ -22,6 +22,13 @@ export const state = () => ({
 })
 
 
+export const actions = {
+  async nuxtServerInit ({ commit }) {
+    //
+  }
+}
+
+
 export const mutations = {
   updateFirebaseInitState(state, payload) {
       state.firebaseInit = payload
@@ -45,13 +52,6 @@ export const mutations = {
     state.navRightState.open = payload.open;
     payload.area ? state.navRightState.mode = payload.area : null;
   },
-}
-
-
-export const actions = {
-  async nuxtServerInit ({ commit }) {
-    //
-  }
 }
 
 

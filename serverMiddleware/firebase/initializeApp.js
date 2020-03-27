@@ -27,7 +27,7 @@ export default function () {
             
             return
         } catch(error) {
-            console.error('error in initializeApp.js -- in express api/firebase folder', error)
+            console.error('error in initializeApp.js -- in express serverMiddleware/firebase folder', error)
             return res.status(404).end()
         }
 

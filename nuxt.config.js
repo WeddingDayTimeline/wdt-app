@@ -32,6 +32,7 @@ export default {
   */
   plugins: [
     // { src: '~plugins/axiosInterceptors.js', ssr: false },    // KEEP FOR AXIOS CALL DEBUGGING
+    { src: '~plugins/serverMiddleware.js', ssr: false },
     { src: '~plugins/veeValidate.js', ssr: false },
     { src: '~plugins/vuesax.js', ssr: false },
     { src: '~plugins/vueGlobalEvents.js', ssr: false },
@@ -69,13 +70,13 @@ export default {
   ** Server Middleware
   */
   serverMiddleware: [
-    '~/api/index.js',
+    '~/serverMiddleware/index.js',
   ],
 
   /*
   ** Files to watch for automatic server-reloading
   */
-  watch: ['~/api/**/*.js'],
+  watch: ['~/serverMiddleware/**/*.js'],
 
   /*
   ** Axios module configuration

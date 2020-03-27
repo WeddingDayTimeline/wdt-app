@@ -25,7 +25,7 @@ export default function ({ app, from, store, route, redirect }) {
           async function checkIfApproved(email) {
             const get = await app.$axios({
               method: 'get',
-              url: '/api/firebase/isUserApproved',
+              url: '/serverMiddleware/firebase/isUserApproved',
               params: {
                 app: 'dig-hub',
                 email: email

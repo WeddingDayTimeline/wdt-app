@@ -2,7 +2,7 @@ const admin = require('firebase-admin');
 const dotenv = require('dotenv').config();
 import initializeApp from './initializeApp.js'
 
-export const newUser = (req, res) => {
+export const createUser = (req, res) => {
 
     // FIRST CHECK IF FIREBASE HAS BEEN INITIALIZED SERVER-SIDE. IF NOT, THEN INITIALIZE.
     initializeApp();
@@ -14,7 +14,7 @@ export const newUser = (req, res) => {
         const sgMail = require('@sendgrid/mail');
         sgMail.setApiKey(sendgridApiKey);
         
-        let link = `${process.env.PRODUCTION_URL}/api/firebase/approveUser?email=${req.body.email}&app=dig-hub`;
+        let link = `${process.env.PRODUCTION_URL}/serverMiddleware/firebase/approveUser?email=${req.body.email}&app=dig-hub`;
         let html = (`${req.body.email} just signed up for a new account for <strong>${process.env.PROJECT_NAME}</strong> and needs your approval.<br><br>Please visit the link below to approve.<br><br>${link}<br><br>Thanks!<br>Your ${process.env.PROJECT_NAME} bot`);
         
         const msg = {
@@ -44,7 +44,7 @@ export const newUser = (req, res) => {
         res.send({ success: true })
 
     } catch(error) {
-        console.log('caught error in newUser express route -- :', error);
+        console.log('caught error in createUser express route -- :', error);
         res.status(404).end()
     }
 

@@ -68,7 +68,7 @@
 
 
 <script>
-import {mapGetters} from 'vuex'
+import {mapGetters, mapActions} from 'vuex'
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
 import 'firebase/storage'
@@ -113,7 +113,9 @@ export default {
       ReAuthorized: false
     };
   },
-  computed: {
+  computed: {...mapGetters({
+      Status: 'auth/getStatus',
+    }),
     HeaderCopy() {
         return this.SignInMode ? 'Sign In' : 'Sign Up'
     },
@@ -128,139 +130,29 @@ export default {
     }
   },
   methods: {
-    SignIn() {
-      let vm = this;
-
-      function updateUI(success) {
-        // IF SUCCESS, GET UI READY
-        if (success) {
-          vm.SubmitBtnColor = 'is-success';
-        } else {
-          vm.SubmitBtnTempColor('is-warning');
-          vm.DisableFields = false;
-        }
-        vm.SubmitBtnDisabled = false;
-        vm.Thinking = false;
-      }
-
-      function signInCatchError(error) {
-        console.log('error in signInCatchError(): ', error);
-        // ERRORS FOR VUESAX ALERT COMPONENTS HERE
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        // FIRST, UPDATE UI
-        updateUI(false);
-
-        // DISPLAY ERROR-SPECIFIC MESSAGES TO this.Error
-        if (errorCode === 'auth/wrong-password' || errorCode === 'auth/user-not-found' || errorCode === 'auth/user-disabled') {
-          vm.Error = { Active: true, Type: 0, Text: 'Incorrect email or password.' }
-        } else if (errorCode === 'auth/invalid-email') {
-          vm.Error = { Active: true, Type: 1, Text: 'This seems to be an invalid email. Please try again.' }
-        }
-      }
-
+    ...mapActions('auth', ['signUp', 'signIn']),
+    async SignIn() {
       // CHECK IF FIELDS ARE VALID, USING ValidateSignInUpFields() ASYNC METHOD
-      this.ValidateSignInUpFields()
-      .then(function(valid) {
-        if (valid) {
+      const valid = await this.ValidateSignInUpFields()
 
-
-          vm.Thinking = true;
-          vm.SubmitBtnDisabled = true;
-          vm.DisableFields = true;
-          vm.Error.Active ? vm.Error.Active = false : null;
-          // SIGN INTO FIREBASE WITH EMAIL AND PASSWORD
-          if (vm.ReauthQuery) {
-            const user = firebase.auth().currentUser;
-            const credential = firebase.auth.EmailAuthProvider.credential(
-              user.email, 
-              vm.Input.Password
-            )
-
-            user.reauthenticateWithCredential(credential)
-            .then(function(response) {
-              vm.ReAuthorized = true;
-              updateUI(true);
-              vm.OnAuthStateChange('reauth');
-            })
-            .catch(function(error) {
-              signInCatchError(error)
-            });
-          } else {
-            firebase.auth().signInWithEmailAndPassword(vm.Input.Email, vm.Input.Password)
-            .then(function(response) {
-              updateUI(true)
-            })
-            .catch(function(error) {
-              signInCatchError(error)
-            });
-          }
-          
-
-        }
-      })
-      .catch(function(error) {
-        console.log('caught error while validating fields in this.SignIn():', error);
-      })
-
-      
+      if (valid) {
+        this.signIn({
+          reauthQuery: vm.ReauthQuery,
+          email: vm.Input.Email,
+          password: vm.Input.Password
+        })
+      }
     },
-    SignUp() {
-      let vm = this;
+    async SignUp() {
       // CHECK IF FIELDS ARE VALID, USING ValidateSignInUpFields() ASYNC METHOD
-      this.ValidateSignInUpFields()
-      .then(function(valid) {
-        if (valid) {
-          // FIRST, PREPARE UI
-          vm.Thinking = true;
-          vm.SubmitBtnDisabled = true;
-          vm.DisableFields = true;
-          vm.Error.Active ? vm.Error.Active = false : null;
-          
-          // CREATE FIREBASE USER WITH EMAIL AND PASSWORD
-          firebase.auth().createUserWithEmailAndPassword(vm.Input.Email, vm.Input.Password)
-          .then(async function(response) {
-            // THEN CALL NEWUSERFLOW, WHICH CALLS newUser API ROUTE TO SEND ADMIN APPROVAL EMAIL AND SET ONBOARDED STATE IN FIRESTORE USER DOC
-            await vm.NewUserFlow(response.user.email, response.user.uid)
-            .then(function(res) {
-              if (res) {
-                // PREPARE UI
-                vm.SubmitBtnColor = 'is-success';
-                vm.SubmitBtnDisabled = false;
-                vm.Thinking = false;
-                vm.DisableFields = false;
-                vm.SubmitBtnColor = 'is-success';
-              }
-              // SEND VERIFICATION EMAIL TO USER
-              vm.SendVerificationEmail();
-            })
-            .catch(function(error) {
-              console.log('caught error while awaiting this.newUserFlow function:', error);
-            })
-          })
-          .catch(function(error) {
-            vm.DisableFields = false;
-            const errorCode = error.code;
-            const errorMessage = error.message;
+      const valid = await this.ValidateSignInUpFields()
 
-            if (errorCode === 'auth/email-already-in-use') {
-              vm.Error = { Active: true, Type: 3, Text: `Looks like this email is already associated with an active account.` }
-            } else if (errorCode === 'auth/invalid-email') {
-              vm.Error = { Active: true, Type: 1, Text: 'This seems to be an invalid email. Please try again.' }
-            } else {
-              console.log('caught error while attempting to create firebase user with email/password, ', 'errorCode:', errorCode, ' errorMessage:', errorMessage);
-            }
-
-            // PREPARE UI
-            vm.SubmitBtnTempColor('is-warning');
-            vm.SubmitBtnDisabled = false;
-            vm.Thinking = false;
-          });
-        }
-      })
-      .catch(function(error) {
-        console.log('caught error while validating fields in this.SignUp():', error);
-      })
+      if (valid) {
+        this.signUp({
+          email: this.Input.Email, 
+          password: this.Input.Password
+        })
+      }
     },
     GoogleSignIn() {
       // CREATE NEW GOOGLE AUTH PROVIDER AND SIGNIN, REDIRECTING BACK TO THIS PAGE AFTERWARDS
@@ -268,11 +160,11 @@ export default {
       firebase.auth().signInWithRedirect(provider);
     },
     async NewUserFlow(email, uid, provider = 'password') {
-      // AXIOS CALL FOR newUser API ROUTE TO SEND ADMIN APPROVAL EMAIL AND SET ONBOARDED:FALSE DEFAULT STATE IN FIRESTORE USER DOC
+      // AXIOS CALL FOR newUser serverMiddleware ROUTE TO SEND ADMIN APPROVAL EMAIL AND SET ONBOARDED:FALSE DEFAULT STATE IN FIRESTORE USER DOC
       try {
         const post = await this.$axios({
           method: 'post',
-          url: '/api/firebase/newUser',
+          url: '/serverMiddleware/firebase/createUser',
           params: {
             app: 'dig-hub'
           },
@@ -288,19 +180,19 @@ export default {
           return false
         }
       } catch (error) {
-        console.log('caught error while making axios call to newUser api route:', error);
+        console.log('caught error while making axios call to newUser serverMiddleware route:', error);
         return false
       }
     },
-    async SendVerificationEmail() {
-      // SEND VERIFICATION EMAIL TO NEW USER
-      const user = firebase.auth().currentUser;
+    // async SendVerificationEmail() {
+    //   // SEND VERIFICATION EMAIL TO NEW USER
+    //   const user = firebase.auth().currentUser;
 
-      await user.sendEmailVerification()
-      .catch(function(error) {
-        console.log('error sending verification email to new user');
-      });
-    },
+    //   await user.sendEmailVerification()
+    //   .catch(function(error) {
+    //     console.log('error sending verification email to new user');
+    //   });
+    // },
     SignUpMode(toMode = null) {
       // CHANGE SIGNIN MODE (SIGN-IN OR SIGN-UP)
       this.Input.Email = '';
@@ -317,7 +209,7 @@ export default {
         this.SignInMode = true;
         this.SubmitBtnColor = 'is-primary';
         this.PasswordResetEmailSent = false;
-      } 
+      }
 
       // CLEAN UP UI
       this.ForgotMode = false;
@@ -399,7 +291,7 @@ export default {
       try {
         const post = await this.$axios({
           method: 'post',
-          url: '/api/firebase/firestore/hasOnboarded',
+          url: '/serverMiddleware/firebase/firestore/hasOnboarded',
           params: {
             app: 'dig-hub'
           },
@@ -415,7 +307,7 @@ export default {
           return false
         }
       } catch (error) {
-        console.error('error while making axios call to hasOnboarded api route', error);
+        console.error('error while making axios call to hasOnboarded serverMiddleware route', error);
         return false
       }
     },
@@ -484,53 +376,73 @@ export default {
 
             async function checkIfApproved(email, uid) {
 
-                // CHECK IF EMAIL IS ORIGINAL EMAIL FROM SIGNUP (IF NOT, CAN BYPASS isUserApproved CHECK)
-                const getIsOriginal = await vm.$axios({
-                  method: 'get',
-                  url: '/api/firebase/firestore/isOriginalSignUpEmail',
-                  params: {
-                    app: 'dig-hub',
-                    uid: uid,
-                    email: email
-                  }
-                })
+              console.log('email:', email);
+              console.log('uid:', uid);
 
-                if (getIsOriginal.data.original) {
-                  // CHECK IF USER HAS BEEN APPROVED BY ADMIN YET
-                  const getApproved = await vm.$axios({
+                let isOriginalEmail = null;
+                
+                if (!vm.JustSignedUp) {
+                  // CHECK IF EMAIL IS ORIGINAL EMAIL FROM SIGNUP (IF NOT, CAN BYPASS isUserApproved CHECK)
+                  const getIsOriginal = await vm.$axios({
                     method: 'get',
-                    url: '/api/firebase/isUserApproved',
+                    url: '/serverMiddleware/firebase/firestore/isOriginalSignUpEmail',
                     params: {
                       app: 'dig-hub',
+                      uid: uid,
                       email: email
                     }
                   })
+                  isOriginalEmail = getIsOriginal.data.original
+                  console.log('isOriginalEmail:', isOriginalEmail)
+                } else {
+                  isOriginalEmail = true
                 }
 
-                // CHECK IF USER HAS FINISHED ONBOARDING
-                await vm.CheckIfOnboarded();
-                
-                if (vm.OnboardedConfirmed) {
-                  if (!getIsOriginal.data.original || (getApproved.data.approved && getApproved.data.emailVerified)) {
-                  // IF ONBOARDED IS COMPLETE AND ADMIN HAS APPROVED BY EMAIL LINK, OR IF EMAIL ISN'T THE ORIGINAL EMAIL AT SIGNUP, YOU PASS!
-                    vm.$root.context.redirect('/dash')
+                if (isOriginalEmail) {
+                  console.log('is original email!');
+
+                  // CHECK IF USER HAS FINISHED ONBOARDING
+                  await vm.CheckIfOnboarded();
+
+                  if (vm.OnboardedConfirmed) {
+                    // CHECK IF USER HAS BEEN APPROVED BY ADMIN & EMAIL HAS BEEN VERIFIED
+                    const getApproved = await vm.$axios({
+                      method: 'get',
+                      url: '/serverMiddleware/firebase/isUserApproved',
+                      params: {
+                        app: 'dig-hub',
+                        email: email
+                      }
+                    })
+
+                    console.log('getApproved:', getApproved)
+
+                    // IF EMAIL ISN'T THE ORIGINAL EMAIL AT SIGNUP, OR IF ONBOARDED IS COMPLETE AND ADMIN HAS APPROVED BY EMAIL LINK, YOU PASS!
+                    if (getApproved.data.approved && getApproved.data.emailVerified) {
+                      console.log('ok to redirect to dash');
+                      vm.$root.context.redirect('/dash')
+                    } else {
+                      // PREPARE UI & STATE
+                      vm.JustSignedUp = true;
+                      vm.$store.commit('updateCreateProfileStartSlide', 3)
+                      vm.$store.commit('updateShowCreateProfile', true)
+                      vm.SignInMode = true;
+                      vm.Loading = false;
+                      vm.Thinking = false;
+                    }
                   } else {
                     // PREPARE UI & STATE
                     vm.JustSignedUp = true;
-                    vm.$store.commit('updateCreateProfileStartSlide', 3)
                     vm.$store.commit('updateShowCreateProfile', true)
                     vm.SignInMode = true;
                     vm.Loading = false;
                     vm.Thinking = false;
                   }
+                    
                 } else {
-                  // PREPARE UI & STATE
-                  vm.JustSignedUp = true;
-                  // vm.CreateProfileStartSlide = 0;
-                  vm.$store.commit('updateShowCreateProfile', true)
-                  vm.SignInMode = true;
-                  vm.Loading = false;
-                  vm.Thinking = false;
+                  console.log('is not original email');
+                  // IF USER EMAIL IS NOT THE ORIGINAL EMAIL AT SIGNUP, THIS MEANS THEY HAVE CHANGED IT WITHIN THE APP... WHICH MEANS THEY HAVE COMPLETED ONBOARDING AND HAVE BEEN APPROVED
+                  vm.$root.context.redirect('/dash')
                 }
             }
 
@@ -576,10 +488,10 @@ export default {
     this.ResetErrorState();
   },
   mounted() {
-    this.OnAuthStateChange('mounted');
     if (this.$route.query.reauth) {
       this.ReauthQuery = true;
-    } 
+    }
+    this.OnAuthStateChange('mounted');
   }
 }
 </script>

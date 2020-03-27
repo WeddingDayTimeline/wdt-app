@@ -50,7 +50,7 @@
       </div>
     </div>
     <b-notification class="no-click" v-if="Slide === 3" type="is-info" :closable="false" indefinite>
-      <b-button class="refresh" type="is-primary" size="is-small" icon-right="redo-alt" :loading="Loading" @click="CheckIfApproved">Refresh</b-button>
+      <b-button class="refresh" type="is-primary" size="is-small" icon-right="redo-alt" :loading="Loading" @click="() => { window.location.reload(false) }">Refresh</b-button>
       <b-tag class="hide" size="is-small">0</b-tag><span class="fs-2 fw-300"> &nbsp; Next steps:</span><br><br>
       <b-tag :type="NextStepsState.step1 ? 'is-info' : 'is-primary'" size="is-small">{{NextStepsState.step1 ? '' : '1'}}<b-icon v-if="NextStepsState.step1" icon="check" size="is-small" /></b-tag><span :class="NextStepsState.step1 ? 'fw-300i light-text' : ''"> &nbsp; Check your email and verify your account.</span><br><br>
       <b-tag :type="NextStepsState.step2 ? 'is-info' : 'is-primary'" size="is-small">{{NextStepsState.step2 ? '' : '2'}}<b-icon v-if="NextStepsState.step2" icon="check" size="is-small" /></b-tag><span :class="NextStepsState.step2 ? 'fw-300i light-text' : ''"> &nbsp; Ask your manager to check their email and approve your account.</span><br><br>
@@ -141,7 +141,7 @@ export default {
       const user = firebase.auth().currentUser;
       const get = await this.$axios({
         method: 'get',
-        url: '/api/firebase/isUserApproved',
+        url: '/serverMiddleware/firebase/isUserApproved',
         params: {
           app: 'dig-hub',
           email: user.email
@@ -151,24 +151,27 @@ export default {
         vm.Loading = false
         console.log('caught error in newUserSlide watcher axios call to isUserApproved:', error);
       })
-      
-      // IF EMAIL IS VERIFIED, SET ICON STATE
-      if (get.data.emailVerified) {
-        this.NextStepsState.step1 = true;
-        console.log('this.NextStepsState.step1:', this.NextStepsState.step1);
-      }
-
-      // IF APPROVED, SET ICON STATE
-      if (get.data.approved) {
-        this.NextStepsState.step2 = true;
-        console.log('this.NextStepsState.step2:', this.NextStepsState.step2);
-      }
 
       // IF APPROVED AND EMAIL IS VERIFIED, REDIRECT TO DASHBOARD
       if (get.data.approved && get.data.emailVerified) {
         console.log('go!');
+        console.log('this.$root.context:', this.$root.context)
         this.$root.context.redirect('/dash')
+      } else {
+        // IF EMAIL IS VERIFIED, SET ICON STATE
+        if (get.data.emailVerified) {
+          this.NextStepsState.step1 = true;
+          console.log('this.NextStepsState.step1:', this.NextStepsState.step1);
+        }
+
+        // IF APPROVED, SET ICON STATE
+        if (get.data.approved) {
+          this.NextStepsState.step2 = true;
+          console.log('this.NextStepsState.step2:', this.NextStepsState.step2);
+        }
       }
+      
+      
       
       // Update UI
       this.Loading = false
@@ -292,7 +295,7 @@ export default {
       try {
         const post = await this.$axios({
           method: 'post',
-          url: '/api/firebase/firestore/hasOnboarded',
+          url: '/serverMiddleware/firebase/firestore/hasOnboarded',
           params: {
             app: 'dig-hub'
           },
@@ -308,7 +311,7 @@ export default {
           return false
         }
       } catch (error) {
-        console.error('error while making axios call to hasOnboarded api route', error);
+        console.error('error while making axios call to hasOnboarded serverMiddleware route', error);
         return false
       }
     },
