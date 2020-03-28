@@ -34,7 +34,12 @@ export default function ({ app, from, store, route, redirect }) {
             if (get.data.approved) {
               // YOU SHALL PASS -- WILL DO NOTHING TO STOP YOU FROM GOING ON AND HAVING AN AWESOME TIME.
             } else {
-              return redirect('/')
+              if (route.fullPath != '/') {
+                return redirect('/')
+              } else {
+                return
+              }
+              
             }
           }
 

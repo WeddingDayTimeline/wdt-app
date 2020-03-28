@@ -1,6 +1,12 @@
 
 export default {
   mode: 'spa',
+  vue: {
+    config: {
+      productionTip: false,
+      devtools: process.env.NODE_ENV !== 'production'
+    }
+  },
   /*
   ** Headers of the page
   */

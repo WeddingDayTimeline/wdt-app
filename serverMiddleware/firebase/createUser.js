@@ -33,7 +33,7 @@ export const createUser = (req, res) => {
 
         const uid = req.body.uid;
         const userData = {
-            onboarded: req.body.provider === 'google.com' ? true : false,
+            onboarded: req.body.provider === 'google.com',
             originalEmailAtSignUp: req.body.email 
         };
 

@@ -127,7 +127,7 @@ export default {
   },
   computed: {
     ...mapGetters({
-      CreateProfileStartSlide: 'getCreateProfileStartSlide',
+      CreateProfileStartSlide: 'auth/getCreateProfileStartSlide',
     })
   },
   methods: {

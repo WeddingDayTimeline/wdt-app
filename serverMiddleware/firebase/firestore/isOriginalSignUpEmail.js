@@ -16,6 +16,7 @@ export const isOriginalSignUpEmail = async (req, res) => {
 
         let doc = await db.collection('users').doc(uid).get()
         console.log('getDoc:', doc)
+        console.log('doc.data():', doc.data())
         const originalEmail = doc.data().originalEmailAtSignUp
         const isOriginal = (originalEmail === email)
 

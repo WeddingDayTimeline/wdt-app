@@ -7,6 +7,9 @@ export default {
         profilePhotoSizeLimit: 3000000,    // MUST BE A MULTIPLE OF 1000000
         defaultAvatar: '~assets/images/format/default-avatar.svg' 
     },
+    api: {
+        appName: 'dig-hub'
+    },
     ux: {
         completionDelay: {
             short: 1250,

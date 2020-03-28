@@ -24,7 +24,7 @@ export default {
   },
   computed: {
     ...mapGetters({
-      ShowCreateProfile: 'getShowCreateProfile',
+      ShowCreateProfile: 'auth/getShowCreateProfile',
     })
   }
 }

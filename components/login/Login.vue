@@ -1,6 +1,6 @@
 <template>
   <div id="login-card-wrapper">
-    <vs-progress class="progress" v-if="Loading || Thinking" indeterminate :height="3" color="primary"></vs-progress>
+    <vs-progress class="progress" v-if="Loading || status.thinking" indeterminate :height="3" color="primary"></vs-progress>
     <div id="auth-card" class="card">
       <header id="auth-card-header" class="card-header">
         <b-message :active="ReauthQuery">
@@ -20,7 +20,7 @@
               <b-field
                 :message="errors[0]"
               >
-                <b-input class="input" icon="envelope" :placeholder="SignInMode ? 'Email' : 'Choose an email'" type="email" v-model="Input.Email" autofocus="true" :readonly="DisableFields || ReauthQuery"/>
+                <b-input class="input" icon="envelope" :placeholder="SignInMode ? 'Email' : 'Choose an email'" type="email" v-model="Input.Email" autofocus="true" :readonly="status.disableFields || ReauthQuery"/>
               </b-field>
             </ValidationProvider>
             <p v-if="ForgotMode && !ResetPasswordBtnClicked" class="reset-instructions">Please enter the email associated with your account.</p>
@@ -29,29 +29,29 @@
               <b-field
                 :message="errors[0]"
               >
-                <b-input :class="ForgotMode ? 'no-click hide' : ''" class="input" icon="unlock-alt" :placeholder="SignInMode ? 'Password' : 'Create a password'" type="password" password-reveal v-model="Input.Password" :readonly="DisableFields" />
+                <b-input :class="ForgotMode ? 'no-click hide' : ''" class="input" icon="unlock-alt" :placeholder="SignInMode ? 'Password' : 'Create a password'" type="password" password-reveal v-model="Input.Password" :readonly="status.disableFields" />
               </b-field>
             </ValidationProvider>
-            <a class="forgot forgot-password" :class="!SignInMode || Error.Active || ForgotMode ? 'no-click hide' : ''" @click="ForgotPassword()">Forgot password?</a>
-            <b-message v-if="Error.Active" type="is-danger" size="is-small" has-icon>
-              {{ Error.Text }}
-              <span v-if="Error.Type === 0 || Error.Type === 3">
+            <a class="forgot forgot-password" :class="!SignInMode || status.error.active || ForgotMode ? 'no-click hide' : ''" @click="ForgotPassword()">Forgot password?</a>
+            <b-message v-if="status.error.active" type="is-danger" size="is-small" has-icon>
+              {{ status.error.text }}
+              <span v-if="status.error.type === 0 || status.error.type === 3">
                 <br>
                 <a class="forgot" @click="ForgotPassword()">Forgot your password?</a>
               </span>
             </b-message>
-            <b-button v-if="SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'is-success' ? 'no-click' : ''" :type="SubmitBtnColor" @click="SignIn()" :icon-left="SubmitBtnColor === 'is-success' ? 'check' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor === 'is-success' ? '' : 'Sign in' }}</b-button>
-            <b-button v-if="!SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'is-success' ? 'no-click' : ''" :type="SubmitBtnColor" @click="SignUp()" :icon-left="SubmitBtnColor === 'is-success' ? 'check' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor === 'is-success' ? '' : 'Create Account' }}</b-button>
-            <b-button v-if="ForgotMode" class="submit-btn full-width-button" :class="SubmitBtnColor === 'is-success' ? 'no-click' : ''" :type="SubmitBtnColor" @click="ResetPassword()" :icon-left="SubmitBtnColor === 'is-success' ? 'check' : ''" :disabled="SubmitBtnDisabled">{{ SubmitBtnColor !== 'is-success' ? 'Reset Password' : 'Email Sent' }}</b-button>
+            <b-button v-if="SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="status.submitBtnColor === 'is-success' ? 'no-click' : ''" :type="status.submitBtnColor" @click="SignIn()" :icon-left="status.submitBtnColor === 'is-success' ? 'check' : ''" :disabled="status.submitBtnDisabled">{{ status.submitBtnColor === 'is-success' ? '' : 'Sign in' }}</b-button>
+            <b-button v-if="!SignInMode && !ForgotMode" class="submit-btn full-width-button" :class="status.submitBtnColor === 'is-success' ? 'no-click' : ''" :type="status.submitBtnColor" @click="SignUp()" :icon-left="status.submitBtnColor === 'is-success' ? 'check' : ''" :disabled="status.submitBtnDisabled">{{ status.submitBtnColor === 'is-success' ? '' : 'Create Account' }}</b-button>
+            <b-button v-if="ForgotMode" class="submit-btn full-width-button" :class="status.submitBtnColor === 'is-success' ? 'no-click' : ''" :type="status.submitBtnColor" @click="ResetPassword()" :icon-left="status.submitBtnColor === 'is-success' ? 'check' : ''" :disabled="status.submitBtnDisabled">{{ status.submitBtnColor !== 'is-success' ? 'Reset Password' : 'Email Sent' }}</b-button>
             <div v-if="!ForgotMode" id="google-option-cont">
               <div class="or-cont"><hr><span class="or">or</span><hr></div>
-              <b-button class="google-signin-btn full-width-button" type="is-google" inverted @click="GoogleSignIn()" :disabled="SubmitBtnDisabled">
+              <b-button class="google-signin-btn full-width-button" type="is-google" inverted @click="signInWithGoogle()" :disabled="status.submitBtnDisabled">
                 <div class="google-logo"></div>
                 Sign in with Google
               </b-button>
             </div>
             <div v-if="!ReauthQuery || (ReauthQuery && ForgotMode)" id="bottom" :class="ForgotMode ? 'forgot' : ''">
-              <div v-if="!PasswordResetEmailSent && !JustSignedUp" id="bottom-inner">
+              <div v-if="!PasswordResetEmailSent && !status.justSignedUp" id="bottom-inner">
                 {{ BottomCopy.One }}<a :class="SignInMode ? '' : 'primary'" @click="SignUpMode()">{{ BottomCopy.Two }}</a>
               </div>
               <div v-else id="bottom-inner">
@@ -86,7 +86,6 @@ export default {
   data() {
     return {
       Loading: true,
-      Thinking: false,
       FirebaseUIInit: false,
       SignInMode: true,
       ForgotMode: false,
@@ -94,27 +93,13 @@ export default {
         Email: '',
         Password: ''
       },
-      // Options: {
-      //   RememberMe: false
-      // },
-      Error: {
-        Active: false,
-        Type: 0,
-        Text: '',
-      },
-      SubmitBtnColor: 'is-primary',
-      SubmitBtnDisabled: false,
       ResetPasswordBtnClicked: false,
       PasswordResetEmailSent: false,
-      DisableFields: false,
-      JustSignedUp: false,
-      OnboardedConfirmed: false,
       ReauthQuery: false,
-      ReAuthorized: false
     };
   },
   computed: {...mapGetters({
-      Status: 'auth/getStatus',
+      status: 'auth/getStatus',
     }),
     HeaderCopy() {
         return this.SignInMode ? 'Sign In' : 'Sign Up'
@@ -130,10 +115,10 @@ export default {
     }
   },
   methods: {
-    ...mapActions('auth', ['signUp', 'signIn']),
+    ...mapActions('auth', ['signUp', 'signIn', 'signInWithGoogle', 'resetPassword', 'hasOnboarded', 'checkIfOnboarded']),
     async SignIn() {
-      // CHECK IF FIELDS ARE VALID, USING ValidateSignInUpFields() ASYNC METHOD
-      const valid = await this.ValidateSignInUpFields()
+      // CHECK IF FIELDS ARE VALID, USING this.$refs.SignUpInObserver.validate() ASYNC METHOD
+      const valid = await this.$refs.SignUpInObserver.validate()
 
       if (valid) {
         this.signIn({
@@ -144,8 +129,8 @@ export default {
       }
     },
     async SignUp() {
-      // CHECK IF FIELDS ARE VALID, USING ValidateSignInUpFields() ASYNC METHOD
-      const valid = await this.ValidateSignInUpFields()
+      // CHECK IF FIELDS ARE VALID, USING this.$refs.SignUpInObserver.validate() ASYNC METHOD
+      const valid = await this.$refs.SignUpInObserver.validate()
 
       if (valid) {
         this.signUp({
@@ -154,45 +139,6 @@ export default {
         })
       }
     },
-    GoogleSignIn() {
-      // CREATE NEW GOOGLE AUTH PROVIDER AND SIGNIN, REDIRECTING BACK TO THIS PAGE AFTERWARDS
-      const provider = new firebase.auth.GoogleAuthProvider();
-      firebase.auth().signInWithRedirect(provider);
-    },
-    async NewUserFlow(email, uid, provider = 'password') {
-      // AXIOS CALL FOR newUser serverMiddleware ROUTE TO SEND ADMIN APPROVAL EMAIL AND SET ONBOARDED:FALSE DEFAULT STATE IN FIRESTORE USER DOC
-      try {
-        const post = await this.$axios({
-          method: 'post',
-          url: '/serverMiddleware/firebase/createUser',
-          params: {
-            app: 'dig-hub'
-          },
-          data: {
-            email: email,
-            uid: uid,
-            provider: provider
-          }
-        });
-        if (post.data.success) {
-          return true
-        } else {
-          return false
-        }
-      } catch (error) {
-        console.log('caught error while making axios call to newUser serverMiddleware route:', error);
-        return false
-      }
-    },
-    // async SendVerificationEmail() {
-    //   // SEND VERIFICATION EMAIL TO NEW USER
-    //   const user = firebase.auth().currentUser;
-
-    //   await user.sendEmailVerification()
-    //   .catch(function(error) {
-    //     console.log('error sending verification email to new user');
-    //   });
-    // },
     SignUpMode(toMode = null) {
       // CHANGE SIGNIN MODE (SIGN-IN OR SIGN-UP)
       this.Input.Email = '';
@@ -207,74 +153,42 @@ export default {
       } else if (toMode === 'signIn' || this.ReauthQuery) {
         // PREPARE UI
         this.SignInMode = true;
-        this.SubmitBtnColor = 'is-primary';
+        this.$store.commit('auth/UPDATE_STATUS', {
+          status: {
+            submitBtnColor: 'is-primary'
+          }
+        })
         this.PasswordResetEmailSent = false;
       }
 
       // CLEAN UP UI
       this.ForgotMode = false;
-      this.Error.Active ? this.Error.Active = false : null
+      this.$store.commit('auth/UPDATE_STATUS', {
+        status: {},
+        error: {
+          active: false
+        }
+      })
     },
     ForgotPassword() {
       // ON 'Forgot Password' LINK CLICK
       this.ForgotMode = true;
       this.SignInMode = true;
       this.ResetPasswordBtnClicked === true ? this.ResetPasswordBtnClicked = false : null;
-      this.Error.Active ? this.Error.Active = false : null;
-    },
-    ResetPassword() {
-      let vm = this;
-      // CHECK IF FIELDS ARE VALID, USING ValidateSignInUpFields() ASYNC METHOD
-      this.ValidateSignInUpFields()
-      .then(function(valid) {
-        if (valid) {
-          // SEND RESET PASSWORD EMAIL
-          // FIRST PREPARE UI
-          vm.Thinking = true;
-          vm.ResetPasswordBtnClicked = true;
-          vm.SubmitBtnDisabled = true;
-          vm.DisableFields = true;
-          vm.Error.Active ? vm.Error.Active = false : null;
-
-          // SEND THE EMAIL
-          firebase.auth().sendPasswordResetEmail(vm.Input.Email)
-          .then(function() {
-            // PREPARE UI
-            vm.SubmitBtnColor = 'is-success';
-            vm.SubmitBtnDisabled = false;
-            vm.Thinking = false;
-            vm.PasswordResetEmailSent = true;
-          })
-          .catch(function(error) {
-            // CREATE ERROR SPECIFIC MESSAGES FOR VUESAX ALERT COMPONENT
-            vm.DisableFields = false;
-            const errorCode = error.code;
-            const errorMessage = error.message;
-            if (errorCode === 'auth/user-not-found') {
-              vm.Error = { Active: true, Type: 2, Text: `We couldn't find an accout associated with this email. Please try again.` }
-            } else if (errorCode === 'auth/invalid-email') {
-              vm.Error = { Active: true, Type: 1, Text: 'This seems to be an invalid email. Please try again.' }
-            } else {
-              console.log('error caught while sending password reset email, ', 'errorCode:', errorCode, ' errorMessage:', errorMessage);
-            }
-
-            // PREPARE UI 
-            vm.SubmitBtnTempColor('is-warning');
-            vm.SubmitBtnDisabled = false;
-            vm.Thinking = false;
-          });
+      this.$store.commit('auth/UPDATE_STATUS', {
+        status: {},
+        error: {
+          active: false
         }
       })
-      .catch(function(error) {
-        console.log('caught error while validating fields in this.ResetPassword(): ', error);
-      })
     },
-    SubmitBtnTempColor(color) {
-      // UPON ERROR, TEMPORARILY CHANGE COLOR, THEN CHANGE IT BACK TO PRIMARY
-      this.SubmitBtnColor = color;
-      setTimeout(() => {
-        this.SubmitBtnColor = 'is-primary';
-      }, 4500);
+    async ResetPassword() {
+      // CHECK IF FIELDS ARE VALID, USING this.$refs.SignUpInObserver.validate() ASYNC METHOD
+      const valid = await this.$refs.SignUpInObserver.validate()
+      if (valid) {
+        this.ResetPasswordBtnClicked = true;
+        this.resetPassword(this.Input.Email)
+      }
     },
     OnKeyUpEnter() {
       // DIFFERENT FUNCTIONS FOR ENTER-KEY-PRESS EVENT DEPENDING ON STATE
@@ -286,90 +200,29 @@ export default {
             this.ResetPassword()
         }
     },
-    async HasOnboarded(uid) {
-      // TRIGGER AXIOS CALL WHEN ONBOARDING HAS COMPLETED (IN THIS CASE, ONBOARDING IS JUST UPDATING PROFILE NAME)
-      try {
-        const post = await this.$axios({
-          method: 'post',
-          url: '/serverMiddleware/firebase/firestore/hasOnboarded',
-          params: {
-            app: 'dig-hub'
-          },
-          data: {
-            uid: uid
-          }
-        });
-        if (post.data.success) {
-          this.OnboardedConfirmed = true
-          return true
-        } else {
-          this.OnboardedConfirmed = false
-          return false
-        }
-      } catch (error) {
-        console.error('error while making axios call to hasOnboarded serverMiddleware route', error);
-        return false
-      }
-    },
-    async CheckIfOnboarded() {
-      let vm = this;
-      const user = firebase.auth().currentUser;
-      let db = firebase.firestore();
-      await db.collection('users').doc(user.uid).get()
-      .then(function(doc) {
-          if (doc.exists) {
-              if (doc.data().onboarded) {
-                vm.OnboardedConfirmed = true
-                return true
-              } else {
-                vm.OnboardedConfirmed = false
-                return false
-              }
-          } else {
-              // doc.data() will be undefined in this case
-          }
-      }).catch(function(error) {
-          console.log("Error getting firestore user document to check onboarded state:", error);
-      });
-    },
-    async ValidateSignInUpFields() {
-      // CHECK IF EMAIL FIELD IS VALID IF SO, RETURN TRUE
-      const isValid = await this.$refs.SignUpInObserver.validate();
-      if (!isValid) {
-        return false
-      } else if (isValid) {
-        return true
-      }
-    },
-    ResetErrorState() {
-      // MAKE SURE ANY ERRORS ARE NOT CROSSING OVER INTO NEXT SLIDE
-      this.Error = {
-        Active: false,
-        Type: 0,
-        Text: '',
-      }
-    },
     OnAuthStateChange(calledFrom) {
       let vm = this;
-      firebase.auth().onAuthStateChanged(function(user) {
+      firebase.auth().onAuthStateChanged( async function(user) {
           // IF USER IS SIGNED IN
           if (user) {
 
-            async function checkIfGoogleSignIn() {
+            async function ifGoogleSignIn() {
                 // CHECK IF USER WAS SIGNED IN WITH GOOGLE METHOD
                 let provider = user.providerData[0].providerId;
 
                 if (provider === 'google.com') {
-                  // IF SO, TRIGGER NewUserFlow FOR SENDING ADMIN APPROVAL EMAIL
-                  await vm.NewUserFlow(user.email, user.uid, provider);
-                  // AND TRIGGER HasOnBoarded TO SET ONBOARDED STATE IN FIRESTORE USER DOC
-                  await vm.HasOnboarded(user.uid)
-                  .then(function() {
-                    return true
+                  // IF SO, TRIGGER this.signUp FOR SENDING ADMIN APPROVAL EMAIL
+                  const signUp = await this.signUp({
+                    email: user.email, 
+                    password: user.uid,
+                    provider: provider
                   })
-                  .catch(function(error) {
-                    console.log('caught error in vm.HasOnboarded():', error)
-                  });
+                  if (signUp) {
+                    // AND TRIGGER HasOnBoarded TO SET ONBOARDED STATE IN FIRESTORE USER DOC
+                    console.log('running hasOnboarded()');
+                    const hasOnboarded = await vm.hasOnboarded(user.uid)
+                    if (hasOnboarded) { return true }
+                  }
                 };
                 return true
             }
@@ -381,7 +234,7 @@ export default {
 
                 let isOriginalEmail = null;
                 
-                if (!vm.JustSignedUp) {
+                if (!vm.status.signUpRequested && !vm.status.justSignedUp) {
                   // CHECK IF EMAIL IS ORIGINAL EMAIL FROM SIGNUP (IF NOT, CAN BYPASS isUserApproved CHECK)
                   const getIsOriginal = await vm.$axios({
                     method: 'get',
@@ -402,9 +255,7 @@ export default {
                   console.log('is original email!');
 
                   // CHECK IF USER HAS FINISHED ONBOARDING
-                  await vm.CheckIfOnboarded();
-
-                  if (vm.OnboardedConfirmed) {
+                  if (!vm.status.signUpRequested && await vm.checkIfOnboarded()) {
                     // CHECK IF USER HAS BEEN APPROVED BY ADMIN & EMAIL HAS BEEN VERIFIED
                     const getApproved = await vm.$axios({
                       method: 'get',
@@ -420,28 +271,25 @@ export default {
                     // IF EMAIL ISN'T THE ORIGINAL EMAIL AT SIGNUP, OR IF ONBOARDED IS COMPLETE AND ADMIN HAS APPROVED BY EMAIL LINK, YOU PASS!
                     if (getApproved.data.approved && getApproved.data.emailVerified) {
                       console.log('ok to redirect to dash');
+                      console.log('vm.$route:', vm.$route)
                       vm.$root.context.redirect('/dash')
                     } else {
                       // PREPARE UI & STATE
-                      vm.JustSignedUp = true;
-                      vm.$store.commit('updateCreateProfileStartSlide', 3)
-                      vm.$store.commit('updateShowCreateProfile', true)
                       vm.SignInMode = true;
                       vm.Loading = false;
-                      vm.Thinking = false;
+                      vm.$store.commit('auth/SHOW_CREATE_PROFILE', 3)
                     }
                   } else {
                     // PREPARE UI & STATE
-                    vm.JustSignedUp = true;
-                    vm.$store.commit('updateShowCreateProfile', true)
                     vm.SignInMode = true;
                     vm.Loading = false;
-                    vm.Thinking = false;
+                    vm.$store.commit('auth/SHOW_CREATE_PROFILE')
                   }
                     
                 } else {
                   console.log('is not original email');
                   // IF USER EMAIL IS NOT THE ORIGINAL EMAIL AT SIGNUP, THIS MEANS THEY HAVE CHANGED IT WITHIN THE APP... WHICH MEANS THEY HAVE COMPLETED ONBOARDING AND HAVE BEEN APPROVED
+                  console.log('vm.$route:', vm.$route)
                   vm.$root.context.redirect('/dash')
                 }
             }
@@ -449,28 +297,23 @@ export default {
             try {
               // CALL THE FUNCTIONS DECLARED ABOVE, IN ORDER
 
-              if (vm.ReauthQuery && !vm.ReAuthorized) {
+              if (vm.ReauthQuery && !vm.status.reAuthorized) {
                 vm.Loading = false
                 vm.Input.Email = user.email;
               }
               
-              if (!vm.ReauthQuery || (vm.ReauthQuery && vm.ReAuthorized) ) {
+              if (!vm.ReauthQuery || (vm.ReauthQuery && vm.status.reAuthorized) ) {
 
-                checkIfGoogleSignIn()
-                .then(function() {
+                let google = await ifGoogleSignIn()
+                if (google) {
                   if (calledFrom !== 'reauth') {
                     checkIfApproved(user.email, user.uid)
-                    .catch(function(error) {
-                      console.log('caught error in mounted() -- checkIfApproved(): ', error);
-                    })
                   } else {
+                    console.log('vm.$route:', vm.$route)
                     vm.$root.context.redirect('/dash')
                   }
-                })
-                .catch(function(error) {
-                  console.log('caught error in mounted() -- checkIfSoogleSignIn(): ', error);
-                })
-
+                }
+                
               }
             } catch (error) {
               console.log('caught error in try/catch in mounted(): ', error);
@@ -485,7 +328,8 @@ export default {
     }
   },
   created() {
-    this.ResetErrorState();
+    // MAKE SURE ANY ERRORS DO NOT CROSS OVER INTO NEXT SLIDE
+    this.$store.commit('auth/RESET_ERROR_STATE')
   },
   mounted() {
     if (this.$route.query.reauth) {
