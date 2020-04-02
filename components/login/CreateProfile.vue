@@ -7,34 +7,46 @@
       <div id="new-user-screen-cont">
         <div v-if="Slide === 0" id="new-user-slide-0" class="new-user-slide">
           <div class="new-user-slide-text">
-            <b-icon class="new-user-slide-main-icon" type="is-success" custom-size="is-large" icon="check"></b-icon>
+            <b-icon
+              class="new-user-slide-main-icon"
+              type="is-success"
+              custom-size="is-large"
+              icon="check"
+            />
             <span class="new-user-slide-text">Next, lets create your profile...</span>
           </div>
           <div class="new-user-slide-btn-cont">
             <b-button class="med-width-button" type="is-primary" @click="() => { Slide++ }">Next</b-button>
           </div>
         </div>
-        <ValidationObserver ref="NameObserver" tag="div" v-slot="{ invalid }" slim>
+        <validation-observer tag="div" slim ref="NameObserver" v-slot="{invalid}">
           <div v-if="Slide === 1" id="new-user-slide-1" class="new-user-slide">
-              <div class="new-user-slide-text">
-                First, let's start with your name:<br><br>
-              </div>
-              <div class="new-user-slide-input">
-                <ValidationProvider rules="required" v-slot="{ errors }" ref="NameRequired">
-                  <b-field
-                    :message="errors[0]"
-                  >
-                    <b-input class="input" placeholder="Full name" type="text" v-model="Input.Name" autofocus="true" :readonly="DisableFields"/>
-                  </b-field>
-                </ValidationProvider>
-              </div>
-              <div class="new-user-slide-btn-cont">
-                <b-button class="med-width-button" type="is-primary" @click="UpdateProfileName()">Next</b-button>
-              </div>
+            <div class="new-user-slide-text">
+              First, let's start with your name:
+              <br />
+              <br />
+            </div>
+            <div class="new-user-slide-input">
+              <validation-provider rules="required" v-slot="{errors}" ref="NameRequired">
+                <b-field :message="errors[0]">
+                  <b-input
+                    class="input"
+                    placeholder="Full name"
+                    type="text"
+                    autofocus="true"
+                    :readonly="DisableFields"
+                    v-model="Input.Name"
+                  />
+                </b-field>
+              </validation-provider>
+            </div>
+            <div class="new-user-slide-btn-cont">
+              <b-button class="med-width-button" type="is-primary" @click="UpdateProfileName">Next</b-button>
+            </div>
           </div>
-        </ValidationObserver>
+        </validation-observer>
         <div v-if="Slide === 2" id="new-user-slide-2" class="new-user-slide">
-          <UpdateUserPhoto instance="CreateProfile" @photoUpdated="() => { Slide++ }" />
+          <update-user-photo instance="CreateProfile" @photoUpdated="() => { Slide++ }" />
         </div>
         <!-- <div v-if="Slide === 3" id="new-user-slide-3" class="new-user-slide">
           <div class="new-user-slide-text">
@@ -46,32 +58,57 @@
               <b-button class="mini-number-icon float-left" type="is-info" size="is-small">3</b-button> Refresh this page, and get started!
             </div>
           </div>
-        </div> -->
+        </div>-->
       </div>
     </div>
-    <b-notification class="no-click" v-if="Slide === 3" type="is-info" :closable="false" indefinite>
-      <b-button class="refresh" type="is-primary" size="is-small" icon-right="redo-alt" :loading="Loading" @click="Refresh()">Refresh</b-button>
-      <b-tag class="hide" size="is-small">0</b-tag><span class="fs-2 fw-300"> &nbsp; Next steps:</span><br><br>
-      <b-tag :type="NextStepsState.step1 ? 'is-info' : 'is-primary'" size="is-small">{{NextStepsState.step1 ? '' : '1'}}<b-icon v-if="NextStepsState.step1" icon="check" size="is-small" /></b-tag><span :class="NextStepsState.step1 ? 'fw-300i light-text' : ''"> &nbsp; Check your email and verify your account.</span><br><br>
-      <b-tag :type="NextStepsState.step2 ? 'is-info' : 'is-primary'" size="is-small">{{NextStepsState.step2 ? '' : '2'}}<b-icon v-if="NextStepsState.step2" icon="check" size="is-small" /></b-tag><span :class="NextStepsState.step2 ? 'fw-300i light-text' : ''"> &nbsp; Ask your manager to check their email and approve your account.</span><br><br>
-      <b-tag type="is-primary" size="is-small">3</b-tag> &nbsp; Refresh this page, and get started!
+    <b-notification v-if="Slide === 3" class="no-click" type="is-info" :closable="false" indefinite>
+      <b-button
+        class="refresh"
+        type="is-primary"
+        size="is-small"
+        icon-right="redo-alt"
+        :loading="Loading"
+        @click="Refresh"
+      >Refresh</b-button>
+      <b-tag class="hide" size="is-small">0</b-tag>
+      <span class="fs-2 fw-300">&nbsp; Next steps:</span>
+      <br />
+      <br />
+      <b-tag :type="NextStepsState.step1 ? 'is-info' : 'is-primary'" size="is-small">
+        {{ NextStepsState.step1 ? '' : '1' }}
+        <b-icon v-if="NextStepsState.step1" icon="check" size="is-small" />
+      </b-tag>
+      <span
+        :class="NextStepsState.step1 ? 'fw-300i light-text' : ''"
+      >&nbsp; Check your email and verify your account.</span>
+      <br />
+      <br />
+      <b-tag :type="NextStepsState.step2 ? 'is-info' : 'is-primary'" size="is-small">
+        {{ NextStepsState.step2 ? '' : '2' }}
+        <b-icon v-if="NextStepsState.step2" icon="check" size="is-small" />
+      </b-tag>
+      <span
+        :class="NextStepsState.step2 ? 'fw-300i light-text' : ''"
+      >&nbsp; Ask your manager to check their email and approve your account.</span>
+      <br />
+      <br />
+      <b-tag type="is-primary" size="is-small">3</b-tag>&nbsp; Refresh this page, and get started!
     </b-notification>
-    <GlobalEvents @keyup.enter="OnKeyUpEnter()"></GlobalEvents>
+    <GlobalEvents @keyup.enter="OnKeyUpEnter" />
   </div>
 </template>
 
-
 <script>
-import {mapGetters, mapActions} from 'vuex'
+import { mapGetters, mapActions } from 'vuex'
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
 import 'firebase/storage'
+import { ValidationProvider, ValidationObserver } from 'vee-validate'
 import UpdateUserPhoto from '~/components/shared/UpdateUserPhoto.vue'
-import { ValidationProvider, ValidationObserver } from 'vee-validate';
 import hubConfig from '~/hubConfig'
 
 export default {
-  name: 'auth',
+  name: 'Auth',
   components: {
     ValidationProvider,
     ValidationObserver,
@@ -85,7 +122,7 @@ export default {
       Error: {
         Active: false,
         Type: 0,
-        Text: '',
+        Text: ''
       },
       Loading: false,
       DisableFields: false,
@@ -94,37 +131,39 @@ export default {
       UploadedPhotoURL: '',
       PhotoUploadBtnState: { icon: 'cloud_upload', color: 'primary' },
       OnboardedConfirmed: false,
-      FileSizeLimit: 3000000,    // FALLBACK SET TO 3MB HERE, BUT DON'T CHANGE THIS NUMBER, CHANGE IT IN hubConfig.js
+      FileSizeLimit: 3000000, // FALLBACK SET TO 3MB HERE, BUT DON'T CHANGE THIS NUMBER, CHANGE IT IN hubConfig.js
       NextStepsState: { step1: false, step2: false }
-    };
+    }
   },
   watch: {
-    Slide: function () {
-      // IF USER REACHES THE LAST newUser SLIDE, 
-      // CHECK IF USER HAS BEEN APPROVED
+    Slide() {
+      /*
+       * IF USER REACHES THE LAST newUser SLIDE,
+       * CHECK IF USER HAS BEEN APPROVED
+       */
       if (this.Slide === 3) {
-        this.CheckIfApproved();
+        this.CheckIfApproved()
       }
 
       // MAKE SURE ANY ERRORS ARE NOT CROSSING OVER INTO NEXT SLIDE
-      this.ResetErrorState();
+      this.ResetErrorState()
     }
   },
   computed: {
     ...mapGetters({
-      CreateProfileStartSlide: 'auth/getCreateProfileStartSlide',
+      CreateProfileStartSlide: 'auth/getCreateProfileStartSlide'
     })
   },
   methods: {
     ...mapActions('auth', ['isUserApproved', 'updateProfile', 'hasOnboarded']),
     async CheckIfApproved() {
-      // Update UI 
-      this.Loading = true;
+      // Update UI
+      this.Loading = true
 
       try {
         // CHECK IF USER HAS BEEN APPROVED
-        let vm = this;
-        const user = firebase.auth().currentUser;
+        const vm = this
+        const user = firebase.auth().currentUser
         const get = await vm.isUserApproved(user.email)
 
         // IF APPROVED AND EMAIL IS VERIFIED, REDIRECT TO DASHBOARD
@@ -133,43 +172,52 @@ export default {
         } else {
           // IF EMAIL IS VERIFIED, SET ICON STATE
           if (get.data.emailVerified) {
-            this.NextStepsState.step1 = true;
+            this.NextStepsState.step1 = true
           }
           // IF APPROVED, SET ICON STATE
           if (get.data.approved) {
-            this.NextStepsState.step2 = true;
+            this.NextStepsState.step2 = true
           }
         }
-        
+
         // Update UI
         this.Loading = false
       } catch (error) {
         vm.Loading = false
-        console.log('caught error in newUserSlide watcher axios call to isUserApproved:', error);
+        console.log(
+          'caught error in newUserSlide watcher axios call to isUserApproved:',
+          error
+        )
       }
     },
     async UpdateProfileName() {
-      let vm = this;
+      const vm = this
       // CHECK IF NAME FIELD IS VALID IF SO, COMPLETE FUNCTION
-      const isValid = await vm.$refs.NameObserver.validate();
+      const isValid = await vm.$refs.NameObserver.validate()
       if (isValid) {
         try {
           // UPDATE PROFILE NAME UPON COMPLETING FORM, THEN GO TO NEXT NEW-USER SLIDE, THEN CALL HasOnboarded FUNCTION TO SET FIREBASE USER DOC TO ONBOARDED:TRUE
-          const user = await firebase.auth().currentUser;
-          const update = await vm.updateProfile({ uid: user.uid, userData: { displayName: vm.Input.Name }} )
+          const user = await firebase.auth().currentUser
+          const update = await vm.updateProfile({
+            uid: user.uid,
+            userData: { displayName: vm.Input.Name }
+          })
           if (update) {
             vm.Slide++
-            vm.HasOnboarded(user.uid);
+            vm.HasOnboarded(user.uid)
           }
         } catch (error) {
-          console.log('caught error while updating user profile display name: ', error);
+          console.log(
+            'caught error while updating user profile display name: ',
+            error
+          )
         }
       }
     },
     ChooseProfilePhoto() {
       // TRIGGER CLICK ON HIDDEN FILE INPUT ELEMENT TO OPEN OS'S NATIVE UPLOAD WINDOW
-      let fileRef = this.$refs.File;
-      fileRef.click();
+      const fileRef = this.$refs.File
+      fileRef.click()
     },
     async HasOnboarded(uid) {
       // TRIGGER AXIOS CALL WHEN ONBOARDING HAS COMPLETED (IN THIS CASE, ONBOARDING IS JUST UPDATING PROFILE NAME)
@@ -183,7 +231,10 @@ export default {
           return false
         }
       } catch (error) {
-        console.error('error while making axios call to hasOnboarded serverMiddleware route', error);
+        console.error(
+          'error while making axios call to hasOnboarded serverMiddleware route',
+          error
+        )
         return false
       }
     },
@@ -195,46 +246,67 @@ export default {
       this.Error = {
         Active: false,
         Type: 0,
-        Text: '',
+        Text: ''
       }
     },
     OnKeyUpEnter() {
       // DIFFERENT FUNCTIONS FOR ENTER-KEY-PRESS EVENT DEPENDING ON STATE OR NEW-USER SLIDE
-        if (this.Slide === 0) {
-            this.Slide++
-        } else if (this.Slide === 1) {
-            this.UpdateProfileName()
-        } else if (this.Slide > 1) {
-            return null
-        } 
+      if (this.Slide === 0) {
+        this.Slide++
+      } else if (this.Slide === 1) {
+        this.UpdateProfileName()
+      } else if (this.Slide > 1) {
+        return null
+      }
     }
   },
   created() {
     // Set startSlide prop as local data slide number
-    this.Slide = this.CreateProfileStartSlide;
+    this.Slide = this.CreateProfileStartSlide
     // IMPORT FILE SIZE LIMIT FROM hubConfig.js
     const digUser = hubConfig.user
-    this.FileSizeLimit = digUser.profilePhotoSizeLimit;
+    this.FileSizeLimit = digUser.profilePhotoSizeLimit
 
-    this.ResetErrorState();
+    this.ResetErrorState()
   }
 }
 </script>
 
-
 <style scoped lang="scss">
-
 .progress {
-  width: calc(22rem - .5rem);
+  width: calc(22rem - 0.5rem);
   margin-bottom: -3px;
 }
 
-.loading #auth-card-header, .loading #input-cont, .loading #input-cont * {
+#auth-card-header {
+  color: material-color('blue-grey', '300');
+  cursor: default;
+}
+
+#input-cont,
+#input-cont-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.error {
+  max-width: 220px;
+  height: min-content !important;
+}
+
+.error * {
+  line-height: 1.333rem;
+}
+
+.loading #auth-card-header,
+.loading #input-cont,
+.loading #input-cont * {
   opacity: 0;
 }
 
 .mostly-hidden {
-  opacity: .1;
+  opacity: 0.1;
 }
 
 #auth-card {
@@ -246,18 +318,13 @@ export default {
   min-height: 16rem;
 }
 
-#auth-card-header {
-  color: material-color('blue-grey', '300');
-  cursor: default;
-}
-
 ::v-deep .vs-card--content {
-  height: calc(100% - 38.4px);    // 38.4px is header height and is consistent.
+  height: calc(100% - 38.4px); // 38.4px is header height and is consistent.
 }
 
 #new-user-screen-cont {
   flex: 1;
-  padding: .666rem;
+  padding: 0.666rem;
 }
 
 #logo-cont {
@@ -272,13 +339,8 @@ export default {
   cursor: default;
 }
 
-#input-cont, #input-cont-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.input, .input-validation-provider {
+.input,
+.input-validation-provider {
   margin-bottom: 1rem;
 }
 
@@ -293,19 +355,18 @@ export default {
 
 .forgot-password {
   align-self: flex-end;
-  margin-top: -.5rem;
+  margin-top: -0.5rem;
   color: $primary;
 }
 
-.check.remember-me, .forgot-password {
-  font-size: .75rem;
+.check.remember-me,
+.forgot-password {
+  font-size: 0.75rem;
 }
 
 .submit-btn {
-  margin: 2.5rem 0 .5rem;
+  margin: 2.5rem 0 0.5rem;
 }
-
-
 
 #google-option-cont {
   display: flex;
@@ -314,10 +375,10 @@ export default {
   margin: 1.2rem 0 0;
 }
 
-#google-option-cont .or-cont{
+#google-option-cont .or-cont {
   display: flex;
   width: 200px;
-  margin: 0 0 .333rem;
+  margin: 0 0 0.333rem;
 }
 
 #google-option-cont hr {
@@ -329,13 +390,11 @@ export default {
   border-left: none;
 }
 
-#google-option-cont .or{
-  margin: -.5rem .666rem 0;
+#google-option-cont .or {
+  margin: -0.5rem 0.666rem 0;
   color: material-color('blue-grey', '200');
   cursor: default;
 }
-
-
 
 #bottom {
   margin-top: 4rem;
@@ -344,11 +403,11 @@ export default {
 }
 
 #bottom.forgot {
-  margin-top: .5rem;
+  margin-top: 0.5rem;
 }
 
 #bottom a {
-  margin: 0 0 0 .2rem;
+  margin: 0 0 0 0.2rem;
   color: material-color('blue-grey', '300');
   cursor: pointer;
 }
@@ -357,25 +416,15 @@ export default {
   color: $primary;
 }
 
-#bottom a.primary, .error span {
+#bottom a.primary,
+.error span {
   color: $primary;
-}
-
-.error {
-  max-width: 220px;
-  height: min-content !important;
-}
-
-.error * {
-  line-height: 1.333rem;
 }
 
 .reset-instructions {
   max-width: 200px;
   color: material-color('blue-grey', '500');
 }
-
-
 
 .new-user-slide {
   display: flex;
@@ -404,15 +453,15 @@ export default {
 }
 
 .new-user-slide-input {
-    flex: 1;
-    display: flex;
-    justify-content: center;
+  flex: 1;
+  display: flex;
+  justify-content: center;
 }
 
 .new-user-slide-btn-cont {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 3rem;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 3rem;
 }
 
 // #new-user-slide-2 .new-user-slide-btn-cont {
@@ -420,7 +469,7 @@ export default {
 // }
 
 .skip {
-  padding-top: .333rem;
+  padding-top: 0.333rem;
   color: material-color('blue-grey', '300');
 }
 
@@ -437,17 +486,16 @@ export default {
 }
 
 ::v-deep .mini-number-icon i {
-  margin-right: 0px !important;
+  margin-right: 0 !important;
 }
 
 .light-text {
-  opacity: .85;
+  opacity: 0.85;
 }
-
 
 .validation-errors {
   display: block;
-  margin: -.5rem 0 0;
+  margin: -0.5rem 0 0;
   color: $danger;
   font-style: italic;
 }
@@ -463,10 +511,7 @@ button.refresh {
 .tag .icon {
   vertical-align: text-bottom;
 }
-
 </style>
 
-
 <style lang="scss">
-
 </style>

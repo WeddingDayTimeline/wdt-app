@@ -1,4 +1,3 @@
-
 export const state = () => ({
   firebaseInit: false,
   userInfo: {
@@ -16,34 +15,33 @@ export const state = () => ({
   }
 })
 
-
 export const actions = {
-  async nuxtServerInit ({ commit }) {
+  async nuxtServerInit({ commit }) {
     //
   }
 }
 
-
 export const mutations = {
   updateFirebaseInitState(state, payload) {
-      state.firebaseInit = payload
+    state.firebaseInit = payload
   },
   updateUserInfo(state, userInfo) {
     Object.assign(state.userInfo, userInfo)
   },
   updateNavLeftState(state, payload) {
-    state.navLeftState.open ? state.navLeftState.open = false : state.navLeftState.open = true
+    state.navLeftState.open
+      ? (state.navLeftState.open = false)
+      : (state.navLeftState.open = true)
   },
   updateNavRightState(state, payload) {
-    state.navRightState.open = payload.open;
-    payload.area ? state.navRightState.mode = payload.area : null;
-  },
+    state.navRightState.open = payload.open
+    payload.area ? (state.navRightState.mode = payload.area) : null
+  }
 }
 
-
 export const getters = {
-  getFirebaseInit: state => state.firebaseInit,
-  getUserInfo: state => state.userInfo,
-  getNavRightState: state => state.navRightState,
-  getNavLeftState: state => state.navLeftState,
+  getFirebaseInit: (state) => state.firebaseInit,
+  getUserInfo: (state) => state.userInfo,
+  getNavRightState: (state) => state.navRightState,
+  getNavLeftState: (state) => state.navLeftState
 }

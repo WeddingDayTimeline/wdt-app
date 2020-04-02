@@ -1,4 +1,3 @@
-
 export default {
   mode: 'spa',
   vue: {
@@ -8,34 +7,36 @@ export default {
     }
   },
   /*
-  ** Headers of the page
-  */
+   ** Headers of the page
+   */
   head: {
     title: process.env.npm_package_name || '',
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { hid: 'description', name: 'description', content: process.env.npm_package_description || '' }
+      {
+        hid: 'description',
+        name: 'description',
+        content: process.env.npm_package_description || ''
+      }
     ],
-    link: [
-      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
-    ]
+    link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }]
   },
   /*
-  ** Customize the progress-bar color
-  */
+   ** Customize the progress-bar color
+   */
   loading: { color: '#fff' },
   /*
-  ** Global CSS
-  */
+   ** Global CSS
+   */
   css: [
     '~assets/scss/main.scss',
-    'material-icons/iconfont/material-icons.css',
+    'material-icons/iconfont/material-icons.css'
     // '~assets/scss/webfonts.scss'
   ],
   /*
-  ** Plugins to load before mounting the App
-  */
+   ** Plugins to load before mounting the App
+   */
   plugins: [
     // { src: '~plugins/axiosInterceptors.js', ssr: false },    // KEEP FOR AXIOS CALL DEBUGGING
     { src: '~plugins/server.js', ssr: false },
@@ -44,17 +45,15 @@ export default {
     { src: '~plugins/vuesax.js', ssr: false },
     { src: '~plugins/vueGlobalEvents.js', ssr: false },
     { src: '~plugins/vueMaterial.js', ssr: false },
-    { src: '~plugins/vClickOutside.js', ssr: false },
+    { src: '~plugins/vClickOutside.js', ssr: false }
   ],
   /*
-  ** Nuxt.js dev-modules
-  */
-  buildModules: [
-    '@nuxtjs/stylelint-module'
-  ],
+   ** Nuxt.js dev-modules
+   */
+  buildModules: ['@nuxtjs/stylelint-module'],
   /*
-  ** Nuxt.js modules
-  */
+   ** Nuxt.js modules
+   */
   modules: [
     // Doc: https://axios.nuxtjs.org/usage
     '@nuxtjs/axios',
@@ -64,78 +63,65 @@ export default {
     '@nuxtjs/style-resources',
     'nuxt-webfontloader',
     'nuxt-buefy',
-    'nuxt-fontawesome',
+    'nuxt-fontawesome'
   ],
-
   /*
-  ** Router & Middleware
-  */
+   ** Router & Middleware
+   */
   router: {
     middleware: 'auth'
   },
-
   /*
-  ** Server Middleware
-  */
-  serverMiddleware: [
-    '~/serverMiddleware/index.js',
-  ],
-
+   ** Server Middleware
+   */
+  serverMiddleware: ['~/serverMiddleware/index.js'],
   /*
-  ** Files to watch for automatic server-reloading
-  */
+   ** Files to watch for automatic server-reloading
+   */
   watch: ['~/serverMiddleware/**/*.js'],
-
   /*
-  ** Axios module configuration
-  ** See https://axios.nuxtjs.org/options
-  */
+   ** Axios module configuration
+   ** See https://axios.nuxtjs.org/options
+   */
   axios: {
     // See https://github.com/nuxt-community/axios-module#options
     browserBaseURL: '/'
   },
   /*
-  ** Build configuration
-  */
-
+   ** Build configuration
+   */
   /*
-  ** Style Resources (Sass loader)
-  */
+   ** Style Resources (Sass loader)
+   */
   styleResources: {
-    scss: [
-      '~/assets/scss/non-compiling/_non-compiling.scss',
-    ]
+    scss: ['~/assets/scss/non-compiling/_non-compiling.scss']
   },
   /*
-  ** Stylelint Module
-  */
+   ** Stylelint Module
+   */
   stylelint: {
     fix: true,
     lintDirtyModulesOnly: true
   },
-
-
   /*
-  ** Web Font Loader
-  */
+   ** Web Font Loader
+   */
   webfontloader: {
     google: {
       families: ['Roboto:300, 300i,400,500,600,700&display=swap']
     }
   },
-
   /*
-  ** Buefy
-  */
+   ** Buefy
+   */
   buefy: {
     materialDesignIcons: false,
     defaultIconPack: 'fas',
     defaultIconComponent: 'font-awesome-icon'
   },
-
   /*
-  ** Fontawesome
-  */
+   ** Fontawesome
+   */
   fontawesome: {
     imports: [
       {
@@ -144,21 +130,18 @@ export default {
       }
     ]
   },
-
   /*
-  ** Nuxt Build
-  */
+   ** Nuxt Build
+   */
   build: {
     /*
-    ** You can extend webpack config here
-    */
+     ** You can extend webpack config here
+     */
     // Add exception
-    transpile: [
-      "vee-validate/dist/rules"
-    ],
-    extend (config, ctx) {
+    transpile: ['vee-validate/dist/rules'],
+    extend(config, ctx) {
       config.node = {
-        fs: "empty"
+        fs: 'empty'
       }
     }
   }

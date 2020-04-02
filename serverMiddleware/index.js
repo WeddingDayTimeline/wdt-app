@@ -30,6 +30,6 @@ app.post('/firebase/firestore/checkIfOnboarded', checkIfOnboarded)
 app.post('/firebase/updateProfile', updateProfile)
 
 module.exports = {
-   path: '/serverMiddleware',
-   handler: app
+  path: '/serverMiddleware',
+  handler: app
 }
