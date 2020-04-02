@@ -9,69 +9,219 @@
     />
     <div id="auth-card" class="card">
       <header id="auth-card-header" class="card-header">
-        <b-message :active="ReauthQuery">Please confirm your password to continue.</b-message>
+        <b-message :active="ReauthQuery">
+          Please confirm your password to continue.
+        </b-message>
         <p
           v-if="!ReauthQuery"
           class="card-header-title"
-        >{{ ForgotMode ? 'Reset Password' : HeaderCopy }}</p>
+        >
+          {{ ForgotMode ? 'Reset Password' : HeaderCopy }}
+        </p>
       </header>
       <div id="logo-cont">
-        <div id="logo">DIG hub</div>
+        <div id="logo">
+          DIG hub
+        </div>
       </div>
       <div id="input-cont" class="card-content" :class="Loading ? 'mostly-hidden' : ''">
         <validation-observer tag="div" slim ref="SignUpInObserver" v-slot="{invalid}">
           <div id="input-cont-inner" class="content" :class="ForgotMode ? 'forgot' : ''">
-            <validation-provider
-              class="input-validation-provider"
-              rules="email"
-              mode="lazy"
-              v-slot="{errors}"
-              ref="EmailValidation"
+            <!-- Primary sign-in choice start -->
+            <div
+              v-if="!PrimarySignInChoice"
+              id="primary-signin-choice"
             >
-              <b-field :message="errors[0]">
-                <b-input
-                  class="input"
-                  icon="envelope"
-                  :placeholder="SignInMode ? 'Email' : 'Choose an email'"
-                  type="email"
-                  autofocus="true"
-                  :readonly="status.disableFields || ReauthQuery"
-                  v-model="Input.Email"
-                />
-              </b-field>
-            </validation-provider>
-            <p
-              v-if="ForgotMode && !ResetPasswordBtnClicked"
-              class="reset-instructions"
-            >Please enter the email associated with your account.</p>
-            <p
-              v-if="ForgotMode && ResetPasswordBtnClicked"
-              class="reset-instructions"
-            >Success! Please check your email for your password reset link.</p>
-            <validation-provider
-              class="input-validation-provider"
-              rules="alpha_dash|min:8"
-              v-slot="{errors}"
-              ref="PasswordValidation"
+              <span>{{ `Sign ${SignInMode ? 'in' : 'up'} with:` }}</span><br>
+              <b-button
+                type="is-primary"
+                outlined
+                :disabled="status.submitBtnDisabled || status.disableFields"
+                @click="SetPrimarySignIn('email')"
+              >
+                Email
+              </b-button>
+              <b-button
+                type="is-primary"
+                outlined
+                :disabled="status.submitBtnDisabled || status.disableFields"
+                @click="SetPrimarySignIn('phone')"
+              >
+                Phone
+              </b-button>
+            </div>
+            <!-- Primary sign-in choice end -->
+            <!-- Primary sign-in email start -->
+            <div
+              v-if="PrimarySignInChoice === 'email'"
+              id="primary-signin-email"
             >
-              <b-field :message="errors[0]">
-                <b-input
-                  :class="ForgotMode ? 'no-click hide' : ''"
-                  class="input"
-                  icon="unlock-alt"
-                  :placeholder="SignInMode ? 'Password' : 'Create a password'"
-                  type="password"
-                  password-reveal
-                  :readonly="status.disableFields"
-                  v-model="Input.Password"
-                />
-              </b-field>
-            </validation-provider>
-            <a
-              class="forgot forgot-password"
-              :class="!SignInMode || status.error.active || ForgotMode ? 'no-click hide' : ''"
-              @click="ForgotPassword"
-            >Forgot password?</a>
+              <div
+                id="input-cont-top"
+              >
+                <a
+                  class="alt-primary-signinup"
+                  :class="status.error.active || ForgotMode ? 'no-click hide' : ''"
+                  @click="SetPrimarySignIn(PrimarySignInChoice === 'email' ? 'phone' : 'email')"
+                >{{ AltPrimarySignInUpCopy }}</a>
+                <validation-provider
+                  class="input-validation-provider"
+                  rules="email"
+                  mode="lazy"
+                  v-slot="{errors}"
+                  ref="EmailValidation"
+                >
+                  <b-field :message="errors[0]">
+                    <b-input
+                      class="input"
+                      icon="envelope"
+                      :placeholder="SignInMode ? 'Email' : 'Choose an email'"
+                      type="email"
+                      autofocus="true"
+                      :readonly="status.disableFields || ReauthQuery"
+                      v-model="Input.Email"
+                    />
+                  </b-field>
+                </validation-provider>
+                <p
+                  v-if="ForgotMode && !ResetPasswordBtnClicked"
+                  class="reset-instructions"
+                >
+                  Please enter the email associated with your account.</p>
+                <p
+                  v-if="ForgotMode && ResetPasswordBtnClicked"
+                  class="reset-instructions"
+                >
+                  Success! Please check your email for your password reset link.
+                </p>
+                <!-- First/Last name start -->
+                <div v-if="!SignInMode" class="first-last-name">
+                  <b-field>
+                    <b-input
+                      class="input"
+                      :placeholder="SignInMode ? 'First name' : 'Your first name'"
+                      type="text"
+                      :readonly="status.disableFields || ReauthQuery"
+                      v-model="Input.Name.First"
+                    />
+                  </b-field>
+                  <b-field>
+                    <b-input
+                      class="input"
+                      :placeholder="SignInMode ? 'Last name' : 'Your last name'"
+                      type="text"
+                      :readonly="status.disableFields || ReauthQuery"
+                      v-model="Input.Name.Last"
+                    />
+                  </b-field>
+                </div>
+                <!-- First/Last name end -->
+                <validation-provider
+                  class="input-validation-provider"
+                  rules="alpha_dash|min:8"
+                  v-slot="{errors}"
+                  ref="PasswordValidation"
+                >
+                  <b-field :message="errors[0]">
+                    <b-input
+                      :class="ForgotMode ? 'no-click hide' : ''"
+                      class="input"
+                      icon="unlock-alt"
+                      :placeholder="SignInMode ? 'Password' : 'Create a password'"
+                      type="password"
+                      password-reveal
+                      :readonly="status.disableFields"
+                      v-model="Input.Password"
+                    />
+                  </b-field>
+                </validation-provider>
+                <a
+                  class="forgot forgot-password"
+                  :class="!SignInMode || status.error.active || ForgotMode ? 'no-click hide' : ''"
+                  @click="ForgotPassword"
+                >Forgot password?</a>
+              </div>
+            </div>
+            <!-- Primary sign-in email end -->
+            <!-- Primary sign-in phone start -->
+            <div
+              v-if="PrimarySignInChoice === 'phone'"
+              id="primary-signin-phone"
+            >
+              <div
+                id="input-cont-top"
+              >
+                <span class="phone-plus">+ </span>
+                <!-- Country code start -->
+                <validation-provider
+                  class="input-validation-provider country-code-provider"
+                  rules="numeric"
+                  mode="lazy"
+                  v-slot="{errors}"
+                  ref="ValidationCountryCode"
+                >
+                  <b-field :message="errors[0]">
+                    <b-input
+                      class="input country-code"
+                      :placeholder="SignInMode ? 'Email' : 'Choose an email'"
+                      type="text"
+                      :readonly="status.disableFields || ReauthQuery"
+                      v-model="Input.CountryCode"
+                    />
+                  </b-field>
+                </validation-provider>
+                <!-- Country code end -->
+                <!-- Area code & phone number start -->
+                <validation-provider
+                  class="input-validation-provider phone-number-provider"
+                  rules="numeric"
+                  mode="lazy"
+                  v-slot="{errors}"
+                  ref="ValidationPhoneNumber"
+                >
+                  <b-field :message="errors[0]">
+                    <b-input
+                      class="input"
+                      :placeholder="SignInMode ? 'Phone number' : 'Choose a phone number'"
+                      type="tel"
+                      autofocus="true"
+                      :readonly="status.disableFields || ReauthQuery"
+                      v-model="Input.Phone"
+                    />
+                  </b-field>
+                </validation-provider>
+                <br />
+                <!-- Area code & phone number end -->
+                <a
+                  class="alt-primary-signinup"
+                  :class="status.error.active || ForgotMode ? 'no-click hide' : ''"
+                  @click="SetPrimarySignIn(PrimarySignInChoice === 'email' ? 'phone' : 'email')"
+                >{{ AltPrimarySignInUpCopy }}</a>
+                <!-- First/Last name start -->
+                <div v-if="!SignInMode" class="first-last-name">
+                  <b-field>
+                    <b-input
+                      class="input"
+                      :placeholder="SignInMode ? 'First name' : 'Your first name'"
+                      type="text"
+                      :readonly="status.disableFields || ReauthQuery"
+                      v-model="Input.Name.First"
+                    />
+                  </b-field>
+                  <b-field>
+                    <b-input
+                      class="input"
+                      :placeholder="SignInMode ? 'Last name' : 'Your last name'"
+                      type="text"
+                      :readonly="status.disableFields || ReauthQuery"
+                      v-model="Input.Name.Last"
+                    />
+                  </b-field>
+                </div>
+                <!-- First/Last name end -->
+              </div>
+            </div>
+            <!-- Primary sign-in phone end -->
             <b-message v-if="status.error.active" type="is-danger" size="is-small" has-icon>
               {{ status.error.text }}
               <span
@@ -88,8 +238,8 @@
               :type="status.submitBtnColor"
               :icon-left="status.submitBtnColor === 'is-success' ? 'check' : ''"
               :disabled="status.submitBtnDisabled"
-              @click="SignIn"
-            >{{ status.submitBtnColor === 'is-success' ? '' : 'Sign in' }}</b-button>
+              @click="PrimarySignInChoice === 'email' ? SignInWithEmail : SignInWithPhone"
+            >{{ status.submitBtnColor === 'is-success' ? '' : (PrimarySignInChoice === 'email' ? 'Sign in' : 'Send Verification Code') }}</b-button>
             <b-button
               v-if="!SignInMode && !ForgotMode"
               class="submit-btn full-width-button"
@@ -97,7 +247,7 @@
               :type="status.submitBtnColor"
               :icon-left="status.submitBtnColor === 'is-success' ? 'check' : ''"
               :disabled="status.submitBtnDisabled"
-              @click="SignUp"
+              @click="PrimarySignInChoice === 'email' ? SignUpWithEmail : SignUpWithPhone"
             >{{ status.submitBtnColor === 'is-success' ? '' : 'Create Account' }}</b-button>
             <b-button
               v-if="ForgotMode"
@@ -108,37 +258,37 @@
               :disabled="status.submitBtnDisabled"
               @click="ResetPassword"
             >{{ status.submitBtnColor !== 'is-success' ? 'Reset Password' : 'Email Sent' }}</b-button>
-            <div v-if="!ForgotMode" id="google-option-cont">
-              <div class="or-cont">
-                <hr />
-                <span class="or">or</span>
-                <hr />
-              </div>
-              <b-button
-                class="google-signin-btn full-width-button"
-                type="is-google"
-                inverted
-                :disabled="status.submitBtnDisabled"
-                @click="signInWithGoogle"
-              >
-                <div class="google-logo" />Sign in with Google
-              </b-button>
+          </div>
+          <div v-if="!ForgotMode" id="google-option-cont">
+            <div class="or-cont">
+              <hr />
+              <span class="or">or</span>
+              <hr />
             </div>
-            <div
-              v-if="!ReauthQuery || (ReauthQuery && ForgotMode)"
-              id="bottom"
-              :class="ForgotMode ? 'forgot' : ''"
+            <b-button
+              class="google-signin-btn full-width-button"
+              type="is-google"
+              inverted
+              :disabled="status.submitBtnDisabled"
+              @click="signInWithGoogle"
             >
-              <div v-if="!PasswordResetEmailSent && !status.justSignedUp" id="bottom-inner">
-                {{ BottomCopy.One }}
-                <a
-                  :class="SignInMode ? '' : 'primary'"
-                  @click="SignUpMode"
-                >{{ BottomCopy.Two }}</a>
-              </div>
-              <div v-else id="bottom-inner">
-                <a class="primary" @click="SignUpMode('signIn')">Sign in</a>
-              </div>
+              <div class="google-logo" />Sign in with Google
+            </b-button>
+          </div>
+          <div
+            v-if="!ReauthQuery || (ReauthQuery && ForgotMode)"
+            id="bottom"
+            :class="ForgotMode ? 'forgot' : ''"
+          >
+            <div v-if="!PasswordResetEmailSent && !status.justSignedUp" id="bottom-inner">
+              {{ BottomCopy.One }}
+              <a
+                :class="SignInMode ? '' : 'primary'"
+                @click="SignUpMode"
+              >{{ BottomCopy.Two }}</a>
+            </div>
+            <div v-else id="bottom-inner">
+              <a class="primary" @click="SignUpMode('signIn')">Sign in</a>
             </div>
           </div>
         </validation-observer>
@@ -171,9 +321,16 @@ export default {
       FirebaseUIInit: false,
       SignInMode: true,
       ForgotMode: false,
+      PrimarySignInChoice: null,
       Input: {
         Email: '',
-        Password: ''
+        Password: '',
+        CountryCode: 1,
+        Phone: '',
+        Name: {
+          First: '',
+          Last: ''
+        }
       },
       ResetPasswordBtnClicked: false,
       PasswordResetEmailSent: false,
@@ -187,6 +344,9 @@ export default {
     HeaderCopy() {
       return this.SignInMode ? 'Sign In' : 'Sign Up'
     },
+    AltPrimarySignInUpCopy() {
+      return `Sign ${this.SignInMode ? 'in' : 'up'} with ${this.PrimarySignInChoice === 'email' ? 'phone number' : 'email'} instead.`
+    },
     BottomCopy() {
       if (this.ReauthQuery) {
         return { One: '', Two: 'Back' }
@@ -199,7 +359,7 @@ export default {
   },
   methods: {
     ...mapActions('auth', [
-      'signUp',
+      'signUpWithEmail',
       'signIn',
       'signInWithGoogle',
       'resetPassword',
@@ -208,7 +368,10 @@ export default {
       'isOriginalEmail',
       'isUserApproved'
     ]),
-    async SignIn() {
+    SetPrimarySignIn(option) {
+      this.PrimarySignInChoice = option
+    },
+    async SignInWithEmail() {
       const vm = this
       // CHECK IF FIELDS ARE VALID, USING this.$refs.SignUpInObserver.validate() ASYNC METHOD
       const valid = await this.$refs.SignUpInObserver.validate()
@@ -221,16 +384,40 @@ export default {
         })
       }
     },
-    async SignUp() {
+    async SignInWithPhone() {
+      const vm = this
+      // CHECK IF FIELDS ARE VALID, USING this.$refs.SignUpInObserver.validate() ASYNC METHOD
+      const valid = await this.$refs.SignUpInObserver.validate()
+
+      // if (valid) {
+      //   this.signIn({
+      //     reauthQuery: vm.ReauthQuery,
+      //     email: vm.Input.Email,
+      //     password: vm.Input.Password
+      //   })
+      // }
+    },
+    async SignUpWithEmail() {
       // CHECK IF FIELDS ARE VALID, USING this.$refs.SignUpInObserver.validate() ASYNC METHOD
       const valid = await this.$refs.SignUpInObserver.validate()
 
       if (valid) {
-        this.signUp({
+        this.signUpWithEmail({
           email: this.Input.Email,
           password: this.Input.Password
         })
       }
+    },
+    async SignUpWithPhone() {
+      // CHECK IF FIELDS ARE VALID, USING this.$refs.SignUpInObserver.validate() ASYNC METHOD
+      const valid = await this.$refs.SignUpInObserver.validate()
+
+      // if (valid) {
+      //   this.signUpWithEmail({
+      //     email: this.Input.Email,
+      //     password: this.Input.Password
+      //   })
+      // }
     },
     SignUpMode(toMode = null) {
       // CHANGE SIGNIN MODE (SIGN-IN OR SIGN-UP)
@@ -305,13 +492,13 @@ export default {
             const provider = user.providerData[0].providerId
 
             if (provider === 'google.com') {
-              // IF SO, TRIGGER this.signUp FOR SENDING ADMIN APPROVAL EMAIL
-              const signUp = await this.signUp({
+              // IF SO, TRIGGER this.signUpWithEmail FOR SENDING ADMIN APPROVAL EMAIL
+              const signUpWithEmail = await this.signUpWithEmail({
                 email: deep(user.email),
                 password: deep(user.uid),
                 provider: deep(provider)
               })
-              if (signUp) {
+              if (signUpWithEmail) {
                 // AND TRIGGER HasOnBoarded TO SET ONBOARDED STATE IN FIRESTORE USER DOC
                 console.log('running hasOnboarded()')
                 const hasOnboarded = await vm.hasOnboarded(deep(user.uid))
@@ -502,16 +689,35 @@ export default {
   margin-bottom: 1rem;
 }
 
+.phone-plus,
+.input-validation-provider.country-code-provider {
+  float: left;
+}
+
+.input-validation-provider.phone-number-provider {
+  float: right;
+}
+
+.input.country-code {
+  width: 3rem;
+
+  & input {
+    width: 100%;
+  }
+}
+
 .check.remember-me {
   align-self: flex-start;
   color: material-color('blue-grey', '300');
 }
 
-.forgot {
+.forgot,
+.alt-primary-signinup {
   cursor: pointer;
 }
 
-.forgot-password {
+.forgot-password,
+.alt-primary-signinup {
   align-self: flex-end;
   margin-top: -0.5rem;
   color: $primary;

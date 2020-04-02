@@ -31,7 +31,7 @@ export const actions = {
     //
   },
 
-  async signUp({ commit, dispatch }, creds) {
+  async signUpWithEmail({ commit, dispatch }, creds) {
     try {
       commit('GENERAL_REQUEST')
       commit('SIGN_UP_REQUEST')
@@ -56,7 +56,7 @@ export const actions = {
       const errorCode = error.code
       const errorMessage = error.message
       console.log(
-        'error during signUp action: ',
+        'error during signUpWithEmail action: ',
         errorCode ? `error code: ${errorCode},` : null,
         errorMessage ? `error message: ${errorMessage}` : `error: ${error}`
       )

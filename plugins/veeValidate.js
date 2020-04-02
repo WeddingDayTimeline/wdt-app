@@ -2,6 +2,7 @@ import { extend } from 'vee-validate'
 import {
   required,
   email,
+  numeric,
   required_if,
   alpha_dash,
   min,
@@ -18,6 +19,11 @@ extend('required', {
 extend('email', {
   ...email,
   message: 'invalid email address'
+})
+
+extend('numeric', {
+  ...numeric,
+  message: 'invalid phone number'
 })
 
 extend('required_if', {
