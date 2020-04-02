@@ -50,6 +50,7 @@ export default {
   ** Nuxt.js dev-modules
   */
   buildModules: [
+    '@nuxtjs/stylelint-module'
   ],
   /*
   ** Nuxt.js modules
@@ -105,6 +106,14 @@ export default {
       '~/assets/scss/non-compiling/_non-compiling.scss',
     ]
   },
+  /*
+  ** Stylelint Module
+  */
+  stylelint: {
+    fix: true,
+    lintDirtyModulesOnly: true
+  },
+
 
   /*
   ** Web Font Loader

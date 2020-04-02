@@ -1,0 +1,16 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "eslint.run": "onSave",
+    "eslint.validate": ["javascript", "vue"],
+    "editor.formatOnSave": true,
+    "vetur.validation.template": false,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": true
+    }
+  }
+}
