@@ -4,15 +4,13 @@
   </aside>
 </template>
 
-
 <script>
-import {mapGetters} from 'vuex'
-import hubConfig from '~/hubConfig.js';
+import { mapGetters } from 'vuex'
+import hubConfig from '~/hubConfig.js'
 
 export default {
-  name: 'nav-right-user',
-  components: {
-  },
+  name: 'NavRightUser',
+  components: {},
   props: {
     navRightOpen: {
       type: Boolean,
@@ -21,12 +19,12 @@ export default {
   },
   data() {
     return {
-      // 
-    };
+      //
+    }
   },
   computed: {
     ...mapGetters({
-    //   GetUserInfo: 'getUserInfo',
+      //   GetUserInfo: 'getUserInfo',
     })
   },
   methods: {
@@ -35,9 +33,7 @@ export default {
 }
 </script>
 
-
 <style scoped lang="scss">
-
 #nav-right {
   grid-area: nav-right;
   // background-color: #394263;
@@ -45,10 +41,6 @@ export default {
   grid-template-columns: 100%;
   grid-template-rows: #{$header-height}rem #{$header-height}rem;
 }
-
 </style>
 
-
-<style lang="scss">
-
-</style>
+<style lang="scss"></style>
