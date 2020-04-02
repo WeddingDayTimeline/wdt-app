@@ -2,7 +2,7 @@ const admin = require('firebase-admin');
 const dotenv = require('dotenv').config();
 import initializeApp from './initializeApp.js'
 
-export const approveUser = (req, res) => {
+export const approveUser = async (req, res) => {
 
     // FIRST CHECK IF FIREBASE HAS BEEN INITIALIZED SERVER-SIDE. IF NOT, THEN INITIALIZE.
     initializeApp();
@@ -19,11 +19,9 @@ export const approveUser = (req, res) => {
     }
 
     try {
-        firebaseApproveUser(req.query.email)
-        .then(function() {
-            // SUCCESS=TRUE IN QUERY STRING
-            res.redirect(`${process.env.PRODUCTION_URL}/userApproved?success=true&email=${req.query.email}`);
-        })
+        await firebaseApproveUser(req.query.email)
+        // SUCCESS=TRUE IN QUERY STRING
+        res.redirect(`${process.env.PRODUCTION_URL}/userApproved?success=true&email=${req.query.email}`);
     } catch (error) {
         console.log('error caught in approveUser express route -- ', error);
         // SUCCESS-FALSE IN QUERY STRING

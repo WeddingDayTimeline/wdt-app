@@ -31,7 +31,7 @@ import {mapGetters} from 'vuex'
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
 import hubConfig from '~/hubConfig.js'
-import formatPhone from '~/util/formatPhone.js'
+import formatPhone from '~/utils/formatPhone.js'
 
 export default {
   name: 'user-approved',

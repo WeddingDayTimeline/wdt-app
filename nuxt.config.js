@@ -38,7 +38,8 @@ export default {
   */
   plugins: [
     // { src: '~plugins/axiosInterceptors.js', ssr: false },    // KEEP FOR AXIOS CALL DEBUGGING
-    { src: '~plugins/serverMiddleware.js', ssr: false },
+    { src: '~plugins/server.js', ssr: false },
+    { src: '~plugins/client.js', ssr: false },
     { src: '~plugins/veeValidate.js', ssr: false },
     { src: '~plugins/vuesax.js', ssr: false },
     { src: '~plugins/vueGlobalEvents.js', ssr: false },

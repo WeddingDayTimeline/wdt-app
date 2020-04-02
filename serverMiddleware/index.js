@@ -7,6 +7,8 @@ import { approveUser } from './firebase/approveUser'
 import { isUserApproved } from './firebase/isUserApproved'
 import { isOriginalSignUpEmail } from './firebase/firestore/isOriginalSignUpEmail'
 import { hasOnboarded } from './firebase/firestore/hasOnboarded'
+import { checkIfOnboarded } from './firebase/firestore/checkIfOnboarded'
+import { updateProfile } from './firebase/updateProfile'
 const express = require('express')
 const app = express()
 const helmet = require('helmet')
@@ -24,6 +26,8 @@ app.get('/firebase/isUserApproved', isUserApproved)
 app.get('/firebase/firestore/isOriginalSignUpEmail', isOriginalSignUpEmail)
 
 app.post('/firebase/firestore/hasOnboarded', hasOnboarded)
+app.post('/firebase/firestore/checkIfOnboarded', checkIfOnboarded)
+app.post('/firebase/updateProfile', updateProfile)
 
 module.exports = {
    path: '/serverMiddleware',

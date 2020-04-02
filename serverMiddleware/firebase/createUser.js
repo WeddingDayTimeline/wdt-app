@@ -1,6 +1,7 @@
 const admin = require('firebase-admin');
 const dotenv = require('dotenv').config();
 import initializeApp from './initializeApp.js'
+import hubConfig from '../../hubConfig'
 
 export const createUser = (req, res) => {
 
@@ -14,7 +15,7 @@ export const createUser = (req, res) => {
         const sgMail = require('@sendgrid/mail');
         sgMail.setApiKey(sendgridApiKey);
         
-        let link = `${process.env.PRODUCTION_URL}/serverMiddleware/firebase/approveUser?email=${req.body.email}&app=dig-hub`;
+        let link = `${process.env.PRODUCTION_URL}/serverMiddleware/firebase/approveUser?email=${req.body.email}&app=${hubConfig.api.appName}`;
         let html = (`${req.body.email} just signed up for a new account for <strong>${process.env.PROJECT_NAME}</strong> and needs your approval.<br><br>Please visit the link below to approve.<br><br>${link}<br><br>Thanks!<br>Your ${process.env.PROJECT_NAME} bot`);
         
         const msg = {
@@ -32,6 +33,7 @@ export const createUser = (req, res) => {
         let db = admin.firestore();
 
         const uid = req.body.uid;
+        console.log('req.body.email:', req.body.email)
         const userData = {
             onboarded: req.body.provider === 'google.com',
             originalEmailAtSignUp: req.body.email 

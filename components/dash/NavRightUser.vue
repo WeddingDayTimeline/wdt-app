@@ -14,11 +14,11 @@
         <div v-if="ProfileSettingsExpanded" id="profile-settings">
           <div id="profile-name-section" class="section">
             <span class="label">Display name</span><span @click="ClickEdit('displayName')"><md-icon>{{ Editing !== 'displayName' ? 'edit' : 'close' }}</md-icon></span><br>
-            <span v-if="Editing !== 'displayName'" class="display-name-preview no-click">{{ UserInfo.name }}</span>
+            <span v-if="Editing !== 'displayName'" class="display-name-preview no-click">{{ User.displayName }}</span>
             <div v-if="Editing === 'displayName'" class="edit-area">
               <ValidationObserver ref="NameObserver" tag="div" v-slot="{ invalid }" slim>
                 <ValidationProvider rules="required" v-slot="{ errors }" ref="NameRequired">
-                  <vs-input class="input" :placeholder="UserInfo.name" type="text" v-model="Input.Name" autofocus="true" :readonly="DisableFields"/>
+                  <vs-input class="input" :placeholder="User.displayName" type="text" v-model="Input.Name" autofocus="true" :readonly="DisableFields"/>
                   <span class="validation-errors no-click">{{ errors[0] }}</span>
                 </ValidationProvider>
                 <vs-button class="reg-width-button" :class="ButtonColor === 'success' ? 'no-click' : ''" :color="ButtonColor" @click="UpdateDisplayName()" :icon="ButtonColor === 'success' ? 'done' : (ButtonColor === 'danger' ? 'error' : '')" :disabled="DisableButtons">{{ ButtonColor === 'success' ? '' : 'Update name' }}</vs-button>
@@ -28,7 +28,7 @@
           <div id="profile-email-section" class="section">
             <span class="label">Email address</span><span @click="ClickEdit('email')"><md-icon>{{ Editing !== 'email' ? 'edit' : 'close' }}</md-icon></span><br>
             <span v-if="Editing === 'email'">Current email:<br></span>
-            <span class="email-preview no-click">{{ UserInfo.email }}</span>
+            <span class="email-preview no-click">{{ User.email }}</span>
             <div v-if="Editing === 'email'" class="edit-area">
               <ValidationObserver ref="EmailObserver" tag="div" v-slot="{ invalid }" slim>
                 <ValidationProvider rules="required|email" mode="lazy" v-slot="{ errors }" ref="EmailRequired1">
@@ -45,7 +45,7 @@
           </div>
           <div id="profile-photo-section" class="section">
             <span class="label">Profile photo</span><span @click="ClickEdit('photo')"><md-icon>{{ Editing !== 'photo' ? 'edit' : 'close' }}</md-icon></span><br>
-            <img v-if="GetUserInfo.photo" :src="GetUserInfo.photo">
+            <img v-if="User.photoURL" :src="User.photoURL">
             <div v-if="Editing === 'photo'" class="edit-area">
               <UpdateUserPhoto @NewUserSlideAddIncr="() => { this.Editing = '' }" />
             </div>
@@ -78,7 +78,7 @@
 
 
 <script>
-import {mapGetters} from 'vuex'
+import {mapGetters, mapActions} from 'vuex'
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
 import hubConfig from '~/hubConfig.js';
@@ -97,7 +97,7 @@ export default {
       type: Boolean,
       required: false
     },
-    UserInfo: {
+    User: {
       type: Object,
       required: false
     }
@@ -124,163 +124,146 @@ export default {
           if (this.NavRightOpen === false) { this.ProfileSettingsExpanded = false }
       }
   },
-  computed: {
-    ...mapGetters({
-      GetUserInfo: 'getUserInfo',
-    })
-  },
   methods: {
-      ClickExpandProfileSettings() {
-          if (!this.ProfileSettingsExpanded) { this.ProfileSettingsExpanded = true }
-          else if (this.ProfileSettingsExpanded) { this.ProfileSettingsExpanded = false }
-      },
-      ClickLogOut() {
-        firebase.auth().signOut()
-      },
-      ClickEdit(setting) {
-        if (this.Editing !== setting) { this.Editing = setting }
-        else { this.Editing = '' }
-      },
-      UpdateUI(state) {    // TAKES 'enable', 'success', 'disable', 'error'
-        let vm =this;
+    ...mapActions('auth', ['updateProfile']),
+    ClickExpandProfileSettings() {
+        if (!this.ProfileSettingsExpanded) { this.ProfileSettingsExpanded = true }
+        else if (this.ProfileSettingsExpanded) { this.ProfileSettingsExpanded = false }
+    },
+    ClickLogOut() {
+      this.$client.signOut()
+    },
+    ClickEdit(setting) {
+      if (this.Editing !== setting) { this.Editing = setting }
+      else { this.Editing = '' }
+    },
+    UpdateUI(state) {    // TAKES 'enable', 'success', 'disable', 'error'
+      let vm = this;
+      // UPDATE UI
+      if (state === 'disable') {
+        vm.DisableFields = true;
+        vm.DisableButtons = true;
+        vm.ButtonColor = 'disabled';
+      } else {
+        vm.DisableFields = false;
+        vm.DisableButtons = false;
+
+        if (state === 'enable') {
+          vm.ButtonColor = 'primary';
+        } else if (state === 'success') {
+          vm.ButtonColor = 'success';
+        } else if (state === 'error') {
+          vm.ButtonColor = 'danger';
+        }
+      }        
+    },
+    async UpdateDisplayName() {
+      let vm = this;
+      // CHECK IF NAME FIELD IS VALID IF SO, COMPLETE FUNCTION
+      const isValid = await vm.$refs.NameObserver.validate();
+      if (isValid) {
+
         // UPDATE UI
-        if (state === 'disable') {
-          vm.DisableFields = true;
-          vm.DisableButtons = true;
-          vm.ButtonColor = 'disabled';
-        } else {
-          vm.DisableFields = false;
-          vm.DisableButtons = false;
+        vm.UpdateUI('disable')
+        
+        try {
+          // UPDATE PROFILE NAME UPON COMPLETING FORM, THEN GO TO NEXT NEW-USER SLIDE, THEN CALL HasOnboarded FUNCTION TO SET FIREBASE USER DOC TO ONBOARDED:TRUE
+          const user = firebase.auth().currentUser;
+          const update = await vm.updateProfile({ uid: user.uid, userData: { displayName: vm.Input.Name }} )
+          if (update) {
+              // UPDATE UI
+            vm.UpdateUI('success')
 
-          if (state === 'enable') {
-            vm.ButtonColor = 'primary';
-          } else if (state === 'success') {
-            vm.ButtonColor = 'success';
-          } else if (state === 'error') {
-            vm.ButtonColor = 'danger';
+            setTimeout(() => {
+              vm.Editing = ''
+            }, hubConfig.ux.completionDelay.long);
           }
-        }        
-      },
-      async UpdateDisplayName() {
-        let vm = this;
-        // CHECK IF NAME FIELD IS VALID IF SO, COMPLETE FUNCTION
-        const isValid = await vm.$refs.NameObserver.validate();
-        if (!isValid) {
-          // 
-        } else if (isValid) {
-
+        } catch (error) {
           // UPDATE UI
-          vm.UpdateUI('disable')
+          vm.UpdateUI('error')
+          console.log('caught error while updating user profile display name from profile settings: ', error);
+        }
+      }
+    },
+    async UpdateEmail() {
+      let vm = this;
+      // CHECK IF NAME FIELD IS VALID IF SO, COMPLETE FUNCTION
+      const isValid = await vm.$refs.EmailObserver.validate();
+      if (isValid) {
 
+        // UPDATE UI
+        vm.UpdateUI('disable')
+
+        // UPDATE PROFILE NAME UPON COMPLETING FORM, THEN GO TO NEXT NEW-USER SLIDE, THEN CALL HasOnboarded FUNCTION TO SET FIREBASE USER DOC TO ONBOARDED:TRUE
+
+        try {
           // UPDATE PROFILE NAME UPON COMPLETING FORM, THEN GO TO NEXT NEW-USER SLIDE, THEN CALL HasOnboarded FUNCTION TO SET FIREBASE USER DOC TO ONBOARDED:TRUE
-          const user = firebase.auth().currentUser;
-
-          user.updateProfile({
-            displayName: vm.Input.Name
-          }).then(function() {
+          const user = await firebase.auth().currentUser;
+          const update = await vm.updateProfile({ uid: user.uid, userData: { email: vm.Input.Email2 }} )
+          if (update) {
             // UPDATE UI
             vm.UpdateUI('success')
 
             setTimeout(() => {
               vm.Editing = ''
             }, hubConfig.ux.completionDelay.long);
-
-            let userInfo = { name: vm.Input.Name}
-            vm.$store.commit("updateUserInfo", userInfo);
-          }).catch(function(error) {
-            // UPDATE UI
-            vm.UpdateUI('error')
-            console.log('caught error while updating user profile display name from profile settings: ', error);
-          });
-        }
-      },
-      async UpdateEmail() {
-        let vm = this;
-        // CHECK IF NAME FIELD IS VALID IF SO, COMPLETE FUNCTION
-        const isValid = await vm.$refs.EmailObserver.validate();
-        if (!isValid) {
-          // 
-        } else if (isValid) {
-
+          }
+        } catch (error) {
+          if (error.code === 'auth/requires-recent-login') {
+            vm.$root.context.redirect('/?reauth=true&type=email')
+            // MUST USE FIREBASE REAUTHORIZE FUNCTION INSTEAD OF UST REDIRECTING TO THE SIGN-IN PAGE TO RE-SIGN IN MANUALLY,
+            // SO REDIRECT WITH CORRECT PARAMS AND MODIFY FLOW BASED ON THOSE PARAMS WITH CONDITIONS IN MULTIPLE PLACES
+            // THEN REDIRECT BACK TO /dash with correct query string to pickup where left off, or do it automatically by saving the temp email in state
+          }
           // UPDATE UI
-          vm.UpdateUI('disable')
-
-          // UPDATE PROFILE NAME UPON COMPLETING FORM, THEN GO TO NEXT NEW-USER SLIDE, THEN CALL HasOnboarded FUNCTION TO SET FIREBASE USER DOC TO ONBOARDED:TRUE
-          const user = firebase.auth().currentUser;
-
-          user.updateEmail(vm.Input.Email2)
-          .then(function() {
-            // UPDATE UI
-            vm.UpdateUI('success')
-
-            setTimeout(() => {
-              vm.Editing = ''
-            }, hubConfig.ux.completionDelay.long);
-
-            let userInfo = { email: vm.Input.Email}
-            vm.$store.commit("updateUserInfo", userInfo);
-          }).catch(function(error) {
-            if (error.code === 'auth/requires-recent-login') {
-              vm.$root.context.redirect('/?reauth=true&type=email')
-              // MUST USE FIREBASE REAUTHORIZE FUNCTION INSTEAD OF UST REDIRECTING TO THE SIGN-IN PAGE TO RE-SIGN IN MANUALLY,
-              // SO REDIRECT WITH CORRECT PARAMS AND MODIFY FLOW BASED ON THOSE PARAMS WITH CONDITIONS IN MULTIPLE PLACES
-              // THEN REDIRECT BACK TO /dash with correct query string to pickup where left off, or do it automatically by saving the temp email in state
-            }
-            // UPDATE UI
-            vm.UpdateUI('error')
-            console.log('caught error while updating user profile email from profile settings: ', error);
-          });
+          vm.UpdateUI('error')
+          console.log('caught error while updating user profile email from profile settings: ', error);
         }
-      },
-      async UpdatePassword() {
-        let vm = this;
-        // CHECK IF NAME FIELD IS VALID IF SO, COMPLETE FUNCTION
-        const isValid = await vm.$refs.PasswordObserver.validate();
-        if (!isValid) {
-          // 
-        } else if (isValid) {
+      }
+    },
+    async UpdatePassword() {
+      let vm = this;
+      // CHECK IF NAME FIELD IS VALID IF SO, COMPLETE FUNCTION
+      const isValid = await vm.$refs.PasswordObserver.validate();
+      if (isValid) {
 
-          // UPDATE UI
-          vm.UpdateUI('disable')
+        // UPDATE UI
+        vm.UpdateUI('disable')
+
+        try {
 
           // First, reauthenticate to avoid needing to check if reauth is needed and redirect to login page.
           const user = firebase.auth().currentUser;
-          
-          const credential = firebase.auth.EmailAuthProvider.credential(
-            user.email, 
-            vm.Input.PasswordOld
-          )
+          const reauth = await vm.$client.reAuthenticate(user.email, vm.Input.PasswordOld)
+          if (reauth) {
+            console.log('reauth client:', reauth)
+            // Then update new password
+            const newPassword = vm.Input.PasswordNew2;
+            console.log('newPassword:', newPassword);
+            
+            const update = await vm.$client.updatePassword(newPassword)
+            if (update) {
+              // UPDATE UI
+              vm.UpdateUI('success')
 
-          user.reauthenticateWithCredential(credential)
-          .then(function(response) {
-          // Then update new password
-          const newPassword = vm.Input.PasswordNew2;
-          console.log('newPassword:', newPassword);
-          
-          user.updatePassword(newPassword)
-          .then(function() {
-            // UPDATE UI
-            vm.UpdateUI('success')
-
-            setTimeout(() => {
-              vm.Editing = ''
-            }, hubConfig.ux.completionDelay.long);
-          }).catch(function(error) {
-            if (error.code === 'auth/requires-recent-login') {
-              vm.$root.context.redirect('/?reauth=true&type=password')
+              setTimeout(() => {
+                vm.Editing = ''
+              }, hubConfig.ux.completionDelay.long);
             }
-            // UPDATE UI
-            vm.UpdateUI('error')
-            console.log('caught error while updating user profile email from profile settings: ', error);
-          });
+          }
 
-          })
-          .catch(function(error) {
-            console.log('caught error while reauthenticating from profile settings > change password: ', error);
-          })
-
+        } catch (error) {
+          if (error.code === 'auth/requires-recent-login') {
+            vm.$root.context.redirect('/?reauth=true&type=password')
+          }
+          // UPDATE UI
+          vm.UpdateUI('error')
+          console.log('caught error while reauthenticating/updating password from profile settings > change password: ', error);
         }
+        
+
       }
+    }
   }
 }
 </script>

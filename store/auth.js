@@ -2,8 +2,10 @@ import * as firebase from 'firebase/app'
 import 'firebase/auth'
 import 'firebase/storage'
 import 'firebase/firestore'
+import deep from '~/utils/deep'
 
 export const state = () => ({
+  user: {},
   status: {
     thinking: false,
     disableSubmitBtn: false,
@@ -13,6 +15,9 @@ export const state = () => ({
     justSignedUp: false,
     createProfileStartSlide: 0,
     showCreateProfile: false,
+    onboardedConfirmed: null,
+    isOriginalEmail: null,
+    userApproved: null,
     error: {
       active: false,
       type: 0,
@@ -34,7 +39,9 @@ export const actions = {
       commit('SIGN_UP_REQUEST')
       // CREATE FIREBASE USER WITH EMAIL AND PASSWORD
       const createUser = await firebase.auth().createUserWithEmailAndPassword(creds.email, creds.password)
+      console.log('createUser:', createUser)
       const newUserFlow = await this.$server.createUser(createUser.user.email, createUser.user.uid, (creds.provider ? creds.provider : 'password'))
+      console.log('newUserFlow:', newUserFlow)
       if (newUserFlow) {
         commit('SIGN_UP_SUCCESS')
         // SEND VERIFICATION EMAIL TO NEW USER
@@ -81,14 +88,14 @@ export const actions = {
           payload.password
         )
 
-        const fbReauth = await user.reauthenticateWithCredential(credential)
+        const fbReauth = await user.reauthenticateWithCredential(deep(credential))
         if (fbReauth) {
           commit('SIGN_IN_SUCCESS')
           //TODO: Rethink logic for OnAuthStateChange('reauth) flow
           // vm.OnAuthStateChange('reauth');
         }
       } else {
-        const fbSignIn = await firebase.auth().signInWithEmailAndPassword(vm.Input.Email, vm.Input.Password)
+        const fbSignIn = await firebase.auth().signInWithEmailAndPassword(payload.email, payload.password)
         if (fbSignIn) {
           commit('SIGN_IN_SUCCESS')
         }
@@ -99,7 +106,7 @@ export const actions = {
       const errorCode = error.code;
       const errorMessage = error.message;
       console.log(
-        'error during signUp action: ', 
+        'error during signIn action: ', 
         errorCode ? `error code: ${errorCode},` : null,
         errorMessage ? `error message: ${errorMessage}` : `error: ${error}`
       );
@@ -144,7 +151,7 @@ export const actions = {
       const errorCode = error.code;
       const errorMessage = error.message;
       console.log(
-        'error during signUp action: ', 
+        'error during signInWithGoogle action: ', 
         errorCode ? `error code: ${errorCode},` : null,
         errorMessage ? `error message: ${errorMessage}` : `error: ${error}`
       );
@@ -169,33 +176,64 @@ export const actions = {
     // TRIGGER AXIOS CALL WHEN ONBOARDING HAS COMPLETED (IN THIS CASE, ONBOARDING IS JUST UPDATING PROFILE NAME)
     try {
       const onboarded = await this.$server.hasOnboarded(uid)
-      let confirmed = onboarded.data.success ? onboarded.data.success : false
+      let confirmed = onboarded.data.success
+      // let confirmed = onboarded.data.success ? onboarded.data.success : false
       commit('UPDATE_ONBOARDED_CONFIRMED', confirmed)
+      return confirmed
     } catch (error) {
       console.error('error while making axios call to hasOnboarded serverMiddleware route', error);
     }
   },
 
-  async checkIfOnboarded({ commit, dispatch}) {
+  async checkIfOnboarded({ commit, dispatch}, uid) {
     try {
-      const user = firebase.auth().currentUser;
-      let db = firebase.firestore();
-      const doc = await db.collection('users').doc(user.uid).get()
-      if (doc) {
-        let confirmed = null
-        if (doc.data().onboarded) {
-          confirmed = true
-        } else {
-          confirmed = false
-        }
-        commit('UPDATE_ONBOARDED_CONFIRMED', confirmed)
-        return confirmed
-      }
+      const check = await this.$server.checkIfOnboarded(uid)
+      let onboarded = check.data.onboarded
+      commit('UPDATE_ONBOARDED_CONFIRMED', onboarded)
+      return onboarded
     } catch (error) {
       console.log("Error getting firestore user document to check onboarded state:", error);
     }
-  }
+  },
 
+  async isOriginalEmail({ commit, dispatch}, params) {
+    try {
+      const isOriginal = await this.$server.isOriginalEmail(params.uid, params.email)
+      commit('UPDATE_IS_ORIGINAL_EMAIL', isOriginal)
+      console.log('isOriginal action:', isOriginal)
+      return isOriginal
+    } catch (error) {
+      console.log('error while making axios call to isOriginalEmail serverMiddleware route');
+    }
+  },
+
+  async isUserApproved({ commit, dispatch}, email) {
+    try {
+      const approved = await this.$server.isUserApproved(deep(email))
+      console.log('approved action :', approved)
+      commit('UPDATE_USER_APPROVED', approved)
+      return approved
+    } catch (error) {
+      console.log('error while making axios call to isUserApproved serverMiddleware route');
+    }
+  },
+
+  async updateProfile({ commit, dispatch}, params) {
+    try {
+      const update = await this.$server.updateProfile(params.uid, params.userData)
+      if (update) {
+        commit('UPDATE_USER', update.data.user)
+        return update.data.user
+      }
+    } catch (error) {
+      console.log('error while making axios call to updateProfile serverMiddleware route');
+    }
+  },
+
+  updateUser({ commit, dispatch}) {
+    const user = firebase.auth().currentUser;
+    commit('UPDATE_USER', user)
+  }
 }
 
 
@@ -205,15 +243,6 @@ export const mutations = {
       ...state.status,
       ...update.status,
       error: { ...state.error, ...update.error }
-    }
-  },
-  GENERAL_REQUEST(state) {
-    state.status = {
-      ...state.status,
-      thinking: true,
-      submitBtnDisabled: true,
-      disableFields: true,
-      error: { ...state.error, active: false }
     }
   },
   GENERAL_REQUEST(state) {
@@ -299,11 +328,27 @@ export const mutations = {
       createProfileStartSlide: startSlide,
       showCreateProfile: true
     }
+  },
+  UPDATE_IS_ORIGINAL_EMAIL(state, isOriginal) {
+    state.status = {
+      ...state.status,
+      isOriginalEmail: isOriginal
+    }
+  },
+  UPDATE_USER_APPROVED(state, approved) {
+    state.status = {
+      ...state.status,
+      userApproved: approved
+    }
+  },
+  UPDATE_USER(state, user) {
+    state.user = user
   }
 }
 
 
 export const getters = {
+  getUser: state => state.user,
   getStatus: state => state.status,
   getCreateProfileStartSlide: state => state.status.createProfileStartSlide,
   getShowCreateProfile: state => state.status.showCreateProfile,

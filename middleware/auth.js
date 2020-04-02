@@ -1,6 +1,8 @@
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
 import axios from 'axios'
+import store from '~/store'
+import deep from '~/utils/deep'
 
 export default function ({ app, from, store, route, redirect }) {
     if (!firebase.apps.length) {
@@ -23,28 +25,20 @@ export default function ({ app, from, store, route, redirect }) {
           // User is signed in.
           // CHECK IF USER HAS BEEN APPROVED BY ADMIN BY EMAIL LINK
           async function checkIfApproved(email) {
-            const get = await app.$axios({
-              method: 'get',
-              url: '/serverMiddleware/firebase/isUserApproved',
-              params: {
-                app: 'dig-hub',
-                email: email
-              }
-            })
-            if (get.data.approved) {
-              // YOU SHALL PASS -- WILL DO NOTHING TO STOP YOU FROM GOING ON AND HAVING AN AWESOME TIME.
-            } else {
-              if (route.fullPath != '/') {
-                return redirect('/')
+            const approved = await store.dispatch('auth/isUserApproved', deep(email))
+            console.log('approved:', approved)
+            if (!approved.data.approved) {
+              if (route.fullPath != '/' && route.path != '/userApproved') {
+                console.log('REDIRECTING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+                // return redirect('/')
               } else {
                 return
               }
-              
             }
           }
 
           try {
-            checkIfApproved(user.email)
+            checkIfApproved(deep(user.email))
           } catch (error) {
             console.log('error in auth.js middleware trying to check if user is approved', error);
           }
@@ -53,6 +47,7 @@ export default function ({ app, from, store, route, redirect }) {
           // User is signed out.
           // IF ROUTE IS NOT THE INDEX ROUTE, OR THE userApproved ROUTE (VIA ADMIN APPROVAL EMAIL LINK), THEN REDIRECT BACK TO INDEX ROUTE
           if (route.fullPath != '/' && route.path != '/userApproved') {
+            console.log('SIGNED OUT -- REDIRECT');
             return redirect('/')
           }
         }

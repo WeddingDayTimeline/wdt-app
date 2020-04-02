@@ -50,7 +50,7 @@
       </div>
     </div>
     <b-notification class="no-click" v-if="Slide === 3" type="is-info" :closable="false" indefinite>
-      <b-button class="refresh" type="is-primary" size="is-small" icon-right="redo-alt" :loading="Loading" @click="() => { window.location.reload(false) }">Refresh</b-button>
+      <b-button class="refresh" type="is-primary" size="is-small" icon-right="redo-alt" :loading="Loading" @click="Refresh()">Refresh</b-button>
       <b-tag class="hide" size="is-small">0</b-tag><span class="fs-2 fw-300"> &nbsp; Next steps:</span><br><br>
       <b-tag :type="NextStepsState.step1 ? 'is-info' : 'is-primary'" size="is-small">{{NextStepsState.step1 ? '' : '1'}}<b-icon v-if="NextStepsState.step1" icon="check" size="is-small" /></b-tag><span :class="NextStepsState.step1 ? 'fw-300i light-text' : ''"> &nbsp; Check your email and verify your account.</span><br><br>
       <b-tag :type="NextStepsState.step2 ? 'is-info' : 'is-primary'" size="is-small">{{NextStepsState.step2 ? '' : '2'}}<b-icon v-if="NextStepsState.step2" icon="check" size="is-small" /></b-tag><span :class="NextStepsState.step2 ? 'fw-300i light-text' : ''"> &nbsp; Ask your manager to check their email and approve your account.</span><br><br>
@@ -62,13 +62,13 @@
 
 
 <script>
-import {mapGetters} from 'vuex'
+import {mapGetters, mapActions} from 'vuex'
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
 import 'firebase/storage'
 import UpdateUserPhoto from '~/components/shared/UpdateUserPhoto.vue'
 import { ValidationProvider, ValidationObserver } from 'vee-validate';
-import hubConfig from '~/hubConfig.js';
+import hubConfig from '~/hubConfig'
 
 export default {
   name: 'auth',
@@ -90,7 +90,6 @@ export default {
       Loading: false,
       DisableFields: false,
       Slide: null,
-      PhotoUploadState: null,
       PhotoUploadProgress: 0,
       UploadedPhotoURL: '',
       PhotoUploadBtnState: { icon: 'cloud_upload', color: 'primary' },
@@ -109,20 +108,6 @@ export default {
 
       // MAKE SURE ANY ERRORS ARE NOT CROSSING OVER INTO NEXT SLIDE
       this.ResetErrorState();
-    },
-    PhotoUploadState: function () {
-      // CHANGE PHOTO UPLOAD BUTTON ICON AND COLOR BASED ON UPLOAD STATE
-      let state = this.PhotoUploadState;
-      if (state === 'uploading') {
-        this.PhotoUploadBtnState = { icon: 'cloud_queue', color: '#cfd8dc' }
-      } else if (state === 'complete') {
-        this.PhotoUploadBtnState = { icon: 'cloud_done', color: 'success' }
-        setTimeout(() => {
-          this.Slide++;
-        }, hubConfig.ux.completionDelay.long);
-      } else if (state === 'error') {
-        this.PhotoUploadBtnState = { icon: 'cloud_off', color: 'danger' }
-      }
     }
   },
   computed: {
@@ -131,179 +116,66 @@ export default {
     })
   },
   methods: {
+    ...mapActions('auth', ['isUserApproved', 'updateProfile', 'hasOnboarded']),
     async CheckIfApproved() {
       // Update UI 
       this.Loading = true;
 
-      // CHECK IF USER HAS BEEN APPROVED
-      
-      let vm = this;
-      const user = firebase.auth().currentUser;
-      const get = await this.$axios({
-        method: 'get',
-        url: '/serverMiddleware/firebase/isUserApproved',
-        params: {
-          app: 'dig-hub',
-          email: user.email
+      try {
+        // CHECK IF USER HAS BEEN APPROVED
+        let vm = this;
+        const user = firebase.auth().currentUser;
+        const get = await vm.isUserApproved(user.email)
+
+        // IF APPROVED AND EMAIL IS VERIFIED, REDIRECT TO DASHBOARD
+        if (get.data.approved && get.data.emailVerified) {
+          this.$root.context.redirect('/dash')
+        } else {
+          // IF EMAIL IS VERIFIED, SET ICON STATE
+          if (get.data.emailVerified) {
+            this.NextStepsState.step1 = true;
+          }
+          // IF APPROVED, SET ICON STATE
+          if (get.data.approved) {
+            this.NextStepsState.step2 = true;
+          }
         }
-      })
-      .catch(function(error) {
+        
+        // Update UI
+        this.Loading = false
+      } catch (error) {
         vm.Loading = false
         console.log('caught error in newUserSlide watcher axios call to isUserApproved:', error);
-      })
-
-      // IF APPROVED AND EMAIL IS VERIFIED, REDIRECT TO DASHBOARD
-      if (get.data.approved && get.data.emailVerified) {
-        console.log('go!');
-        console.log('this.$root.context:', this.$root.context)
-        this.$root.context.redirect('/dash')
-      } else {
-        // IF EMAIL IS VERIFIED, SET ICON STATE
-        if (get.data.emailVerified) {
-          this.NextStepsState.step1 = true;
-          console.log('this.NextStepsState.step1:', this.NextStepsState.step1);
-        }
-
-        // IF APPROVED, SET ICON STATE
-        if (get.data.approved) {
-          this.NextStepsState.step2 = true;
-          console.log('this.NextStepsState.step2:', this.NextStepsState.step2);
-        }
       }
-      
-      
-      
-      // Update UI
-      this.Loading = false
     },
     async UpdateProfileName() {
       let vm = this;
       // CHECK IF NAME FIELD IS VALID IF SO, COMPLETE FUNCTION
       const isValid = await vm.$refs.NameObserver.validate();
-      if (!isValid) {
-        // 
-      } else if (isValid) {
-
-        // UPDATE PROFILE NAME UPON COMPLETING FORM, THEN GO TO NEXT NEW-USER SLIDE, THEN CALL HasOnboarded FUNCTION TO SET FIREBASE USER DOC TO ONBOARDED:TRUE
-        const user = firebase.auth().currentUser;
-
-        user.updateProfile({
-          displayName: vm.Input.Name
-        }).then(function() {
-          vm.Slide++
-          vm.HasOnboarded(user.uid);
-        }).catch(function(error) {
+      if (isValid) {
+        try {
+          // UPDATE PROFILE NAME UPON COMPLETING FORM, THEN GO TO NEXT NEW-USER SLIDE, THEN CALL HasOnboarded FUNCTION TO SET FIREBASE USER DOC TO ONBOARDED:TRUE
+          const user = await firebase.auth().currentUser;
+          const update = await vm.updateProfile({ uid: user.uid, userData: { displayName: vm.Input.Name }} )
+          if (update) {
+            vm.Slide++
+            vm.HasOnboarded(user.uid);
+          }
+        } catch (error) {
           console.log('caught error while updating user profile display name: ', error);
-        });
+        }
       }
-
     },
     ChooseProfilePhoto() {
       // TRIGGER CLICK ON HIDDEN FILE INPUT ELEMENT TO OPEN OS'S NATIVE UPLOAD WINDOW
       let fileRef = this.$refs.File;
       fileRef.click();
     },
-    async UpdateProfilePhoto(event) {
-      let vm = this;
-      this.ResetErrorState();
-
-      const files = event.target.files;
-      // IF A NEW FILE WAS UPLOADED
-
-      if (files.length) {
-        // GET THE FILE
-        const file = files[0];
-        console.log('file:', file);
-        // VALIDATION
-        let validation = { size: false, type: false}
-
-        if (file.size <= vm.FileSizeLimit) {
-          validation.size = true;
-          if (file.type.includes('image')) {
-            validation.type = true;
-          } else {
-            vm.Error = { Active: true, Type: 4, Text: 'Must be an image file' }
-          }
-        } else {
-          vm.Error = { Active: true, Type: 4, Text: 'File size must be less than 3 mb' }
-        }
-
-        if (validation.size && validation.type) {
-          // UPLOAD IT TO profilePhoto FOLDER IN FIREBASE STORAGE
-          const user = firebase.auth().currentUser;
-          const storageRef = firebase.storage().ref();
-          const profilePhotoRef = storageRef.child('profilePhoto');
-          const photoRef = profilePhotoRef.child(`${user.uid}`);
-          const uploadTask = photoRef.put(file);
-          this.PhotoUploadState = 'uploading';
-
-          // WATCH FOR UPDATES TO TASK STATE ON uploadTasK, ABOVE
-          uploadTask.on(firebase.storage.TaskEvent.STATE_CHANGED, // or 'state_changed'
-            function(snapshot) {
-              // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
-              var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-              // SEND PROGRESS UPDATES TO VUE DATA
-              vm.PhotoUploadProgress = progress;
-            }, function(error) {
-            // A full list of error codes is available at
-            // https://firebase.google.com/docs/storage/web/handle-errors
-            switch (error.code) {
-              case 'storage/unauthorized':
-                // User doesn't have permission to access the object
-                vm.PhotoUploadState = 'error'
-                console.log('error while trying to upload profile photo:', error);
-                break;
-
-              case 'storage/canceled':
-                // User canceled the upload
-                vm.PhotoUploadState = 'error'
-                console.log('error while trying to upload profile photo:', error);
-                break;
-
-              case 'storage/unknown':
-                // Unknown error occurred, inspect error.serverResponse
-                vm.PhotoUploadState = 'error'
-                console.log('error while trying to upload profile photo:', error);
-                break;
-            }
-          }, function() {
-            // Upload completed successfully
-            uploadTask.snapshot.ref.getDownloadURL()
-            .then(function(downloadURL) {
-              // UPDATE VUE DATA WITH 'COMPLETE' STATE AND DOWNLOAD URL
-              console.log('File available at', downloadURL);
-              vm.UploadedPhotoURL = downloadURL;
-              vm.PhotoUploadState = 'complete';
-              // UPDATE FIREBASE USER PROFILE WITH NEW photoURL
-              user.updateProfile({
-                photoURL: downloadURL
-              }).catch(function(error) {
-                console.log('caught error while updating user profile photo URL: ', error);
-              });
-            })
-            .catch(function(error) {
-              console.log('caught error while updating user profile photo URL: ', error);
-            });
-          });
-        } else {
-          return
-        }
-      }
-    },
     async HasOnboarded(uid) {
       // TRIGGER AXIOS CALL WHEN ONBOARDING HAS COMPLETED (IN THIS CASE, ONBOARDING IS JUST UPDATING PROFILE NAME)
       try {
-        const post = await this.$axios({
-          method: 'post',
-          url: '/serverMiddleware/firebase/firestore/hasOnboarded',
-          params: {
-            app: 'dig-hub'
-          },
-          data: {
-            uid: uid
-          }
-        });
-        if (post.data.success) {
+        const onboarded = await this.hasOnboarded(uid)
+        if (onboarded.data.success) {
           this.OnboardedConfirmed = true
           return true
         } else {
@@ -314,6 +186,9 @@ export default {
         console.error('error while making axios call to hasOnboarded serverMiddleware route', error);
         return false
       }
+    },
+    Refresh() {
+      window.location.reload(false)
     },
     ResetErrorState() {
       // MAKE SURE ANY ERRORS ARE NOT CROSSING OVER INTO NEXT SLIDE

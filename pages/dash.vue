@@ -12,11 +12,11 @@
           </div>
           <div id="user-area-cont" @click="ClickHeaderRight('user')">
             <div class="user-avatar-cont">
-              <img v-if="GetUserInfo.photo" :src="GetUserInfo.photo">
+              <img v-if="User.photoURL" :src="User.photoURL">
               <md-icon v-else class="user-avatar">account_circle</md-icon>
             </div>
             <div class="user-name-cont">
-              <span class="user-name">{{ GetUserInfo.name }}</span>
+              <span class="user-name">{{ User.displayName }}</span>
             </div>
           </div>
         </div>
@@ -27,7 +27,7 @@
         </div>
       </aside>
       <NavRightNotif v-if="GetNavRightState.open && GetNavRightState.mode === 'notif'" :nav-right-open="GetNavRightState.open" v-click-outside="ClickOutsideNavRight" />
-      <NavRightUser v-if="GetNavRightState.open && GetNavRightState.mode === 'user'" :nav-right-open="GetNavRightState.open" :user-info="GetUserInfo" v-click-outside="ClickOutsideNavRight" />
+      <NavRightUser v-if="GetNavRightState.open && GetNavRightState.mode === 'user'" :nav-right-open="GetNavRightState.open" :user="User" v-click-outside="ClickOutsideNavRight" />
       <main class="main"></main>
     </div>
     <!-- <button @click="LogOut()">Log out</button> -->
@@ -43,6 +43,7 @@ import Logo from '~/components/Logo.vue'
 import hubConfig from '~/hubConfig.js';
 import NavRightNotif from '~/components/dash/NavRightNotif.vue'
 import NavRightUser from '~/components/dash/NavRightUser.vue'
+import deep from '~/utils/deep'
 
 export default {
   name: 'dash',
@@ -58,24 +59,12 @@ export default {
   },
   computed: {
     ...mapGetters({
-      GetUserInfo: 'getUserInfo',
+      User: 'auth/getUser',
       GetNavRightState: 'getNavRightState',
       GetNavLeftState: 'getNavLeftState',
     })
   },
   methods: {
-    CommitUserInfo(user) {
-      // const user = firebase.auth().currentUser;
-      const userInfo = {
-        uid: user.uid,
-        name: user.displayName,
-        email: user.email,
-        photo: user.photoURL || ''
-      }
-      console.log('user.photoURL:', user.photoURL);
-      console.log('userInfo.photo:', userInfo.photo);
-      this.$store.commit("updateUserInfo", userInfo);
-    },
     ClickBurgerCont() {
       this.$store.commit("updateNavLeftState", null);
     },
@@ -99,7 +88,7 @@ export default {
     let vm = this;
     firebase.auth().onAuthStateChanged(function(user) {
       if (user) {
-        vm.CommitUserInfo(user);
+        vm.$store.commit('auth/UPDATE_USER', deep(user));
       }
     })
   }

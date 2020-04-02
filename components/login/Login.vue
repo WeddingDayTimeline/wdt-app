@@ -75,6 +75,7 @@ import 'firebase/storage'
 import 'firebase/firestore'
 import Logo from '~/components/Logo.vue'
 import { ValidationProvider, ValidationObserver } from 'vee-validate';
+import deep from '~/utils/deep'
 
 export default {
   name: 'auth',
@@ -115,8 +116,9 @@ export default {
     }
   },
   methods: {
-    ...mapActions('auth', ['signUp', 'signIn', 'signInWithGoogle', 'resetPassword', 'hasOnboarded', 'checkIfOnboarded']),
+    ...mapActions('auth', ['signUp', 'signIn', 'signInWithGoogle', 'resetPassword', 'hasOnboarded', 'checkIfOnboarded', 'isOriginalEmail', 'isUserApproved']),
     async SignIn() {
+      let vm = this
       // CHECK IF FIELDS ARE VALID, USING this.$refs.SignUpInObserver.validate() ASYNC METHOD
       const valid = await this.$refs.SignUpInObserver.validate()
 
@@ -213,14 +215,14 @@ export default {
                 if (provider === 'google.com') {
                   // IF SO, TRIGGER this.signUp FOR SENDING ADMIN APPROVAL EMAIL
                   const signUp = await this.signUp({
-                    email: user.email, 
-                    password: user.uid,
-                    provider: provider
+                    email: deep(user.email), 
+                    password: deep(user.uid),
+                    provider: deep(provider)
                   })
                   if (signUp) {
                     // AND TRIGGER HasOnBoarded TO SET ONBOARDED STATE IN FIRESTORE USER DOC
                     console.log('running hasOnboarded()');
-                    const hasOnboarded = await vm.hasOnboarded(user.uid)
+                    const hasOnboarded = await vm.hasOnboarded(deep(user.uid))
                     if (hasOnboarded) { return true }
                   }
                 };
@@ -236,16 +238,9 @@ export default {
                 
                 if (!vm.status.signUpRequested && !vm.status.justSignedUp) {
                   // CHECK IF EMAIL IS ORIGINAL EMAIL FROM SIGNUP (IF NOT, CAN BYPASS isUserApproved CHECK)
-                  const getIsOriginal = await vm.$axios({
-                    method: 'get',
-                    url: '/serverMiddleware/firebase/firestore/isOriginalSignUpEmail',
-                    params: {
-                      app: 'dig-hub',
-                      uid: uid,
-                      email: email
-                    }
-                  })
-                  isOriginalEmail = getIsOriginal.data.original
+                  const isOriginal = await vm.isOriginalEmail({ uid: deep(uid), email: deep(email) })
+                  console.log('isOriginal:', isOriginal)
+                  isOriginalEmail = isOriginal.data.original
                   console.log('isOriginalEmail:', isOriginalEmail)
                 } else {
                   isOriginalEmail = true
@@ -255,21 +250,13 @@ export default {
                   console.log('is original email!');
 
                   // CHECK IF USER HAS FINISHED ONBOARDING
-                  if (!vm.status.signUpRequested && await vm.checkIfOnboarded()) {
+                  if (!vm.status.signUpRequested && await vm.checkIfOnboarded(deep(uid))) {
                     // CHECK IF USER HAS BEEN APPROVED BY ADMIN & EMAIL HAS BEEN VERIFIED
-                    const getApproved = await vm.$axios({
-                      method: 'get',
-                      url: '/serverMiddleware/firebase/isUserApproved',
-                      params: {
-                        app: 'dig-hub',
-                        email: email
-                      }
-                    })
-
-                    console.log('getApproved:', getApproved)
+                    const approved = await vm.isUserApproved(deep(email))
+                    console.log('approved in Login.vue:', approved)
 
                     // IF EMAIL ISN'T THE ORIGINAL EMAIL AT SIGNUP, OR IF ONBOARDED IS COMPLETE AND ADMIN HAS APPROVED BY EMAIL LINK, YOU PASS!
-                    if (getApproved.data.approved && getApproved.data.emailVerified) {
+                    if (approved.data.approved && approved.data.emailVerified) {
                       console.log('ok to redirect to dash');
                       console.log('vm.$route:', vm.$route)
                       vm.$root.context.redirect('/dash')

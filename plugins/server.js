@@ -1,4 +1,4 @@
-import sm from '~/api/serverMiddleware'
+import sm from '~/api/server'
 export default (ctx, inject) => {
   // inject the abstracted/organized serverMiddleware calls in the context (ctx.app.$server)
   // And in the Vue instances (this.$server in your components)

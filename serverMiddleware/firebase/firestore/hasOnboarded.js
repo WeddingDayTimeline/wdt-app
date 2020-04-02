@@ -2,7 +2,7 @@ const admin = require('firebase-admin');
 const dotenv = require('dotenv').config();
 import initializeApp from '../initializeApp.js'
 
-export const hasOnboarded = (req, res) => {
+export const hasOnboarded = async (req, res) => {
 
     // FIRST CHECK IF FIREBASE HAS BEEN INITIALIZED SERVER-SIDE. IF NOT, THEN INITIALIZE.
     initializeApp();
@@ -12,24 +12,22 @@ export const hasOnboarded = (req, res) => {
         // UPDATE USER WITH ONBOARDED=TRUE DATA IN FIRESTORE
         let db = admin.firestore();
         const uid = req.body.uid;
+        console.log('uid:', uid)
 
         const userData = {
             onboarded: true
         };
 
-        let getDoc = db.collection('users').doc(uid).get()
-        .then(doc => {
-            // IF DOC DOESNT EXIST THEN USE 'SET' VERB TO CREATE A NEW DOC
-            if (!doc.exists) {
-              let updateDoc = db.collection('users').doc(uid).set(userData);
-            } else {
-                // IF DOC EXISTS THEN USE 'UPDATE' VERB SO AS TO NOT OVERWRITE ANYTHING YOU DON'T WANT TO
-              let updateDoc = db.collection('users').doc(uid).update(userData);
-            }
-          })
-          .catch(err => {
-            console.log('Error getting document in hasOnboarded express route', err);
-          });
+        let doc = await db.collection('users').doc(uid).get()
+        // IF DOC DOESNT EXIST THEN USE 'SET' VERB TO CREATE A NEW DOC
+        if (!doc.exists) {
+          console.log('doc dont exist');
+          let updateDoc = db.collection('users').doc(uid).set(userData);
+        } else {
+          console.log('doc exists!');
+            // IF DOC EXISTS THEN USE 'UPDATE' VERB SO AS TO NOT OVERWRITE ANYTHING YOU DON'T WANT TO
+          let updateDoc = db.collection('users').doc(uid).update(userData);
+        }
 
         // FINISH
         res.send({ success: true })
