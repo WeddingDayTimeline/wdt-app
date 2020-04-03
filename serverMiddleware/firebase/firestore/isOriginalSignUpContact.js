@@ -11,6 +11,7 @@ export const isOriginalSignUpContact = async (req, res) => {
     const db = admin.firestore()
     const uid = req.query.uid
     const contact = req.query.contact
+    console.log('contact:', contact)
 
     const doc = await db
       .collection('users')

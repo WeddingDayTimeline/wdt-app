@@ -143,19 +143,32 @@ export const actions = {
     }
   },
 
-  async signUpInWithPhone({ commit, dispatch }, phoneNumber) {
+  async signUpInWithPhone({ commit, dispatch }, params) {
     commit('GENERAL_REQUEST')
-
+    console.log('signUpInWithPhone action!');
     this.$client.useDeviceLanguage()
     window.recaptchaVerifier = this.$client.reCaptchaVerifier()
     console.log('window.recaptchaVerifier:', window.recaptchaVerifier)
 
     try {
-      const confirmation = await this.$client.signUpInWithPhoneNumber(phoneNumber)
-      if (confirmation) {
-        console.log('confirmation:', confirmation)
+      const confirm = await this.$client.signUpInWithPhoneNumber(params.phone)
+      if (confirm) {
+        console.log('confirm:', confirm)
         commit('SEND_VCODE_SUCCESS')
-        window.confirmationResult = confirmation
+        window.confirmationResult = confirm
+
+        console.log('params.method:', params.method)
+        if (params.method === 'signUp') {
+          console.log('params.method:', params.method)
+          const newUserFlow = await this.$server.createUserWithPhone(
+            params.phone,
+            confirm.user.uid
+          )
+          console.log('newUserFlow:', newUserFlow)
+          if (newUserFlow) {
+            commit('SIGN_UP_SUCCESS')
+          }
+        }
       }
     } catch (error) {
       const widget = await window.recaptchaVerifier.render()

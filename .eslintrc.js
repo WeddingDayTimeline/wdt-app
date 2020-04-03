@@ -34,6 +34,7 @@ module.exports = {
     'no-whitespace-before-property': 2,
     'space-before-function-paren': [2, 'never'],
     'object-curly-spacing': [2, 'always'],
+    'no-inner-declarations': 0,
     quotes: [
       2,
       'single',

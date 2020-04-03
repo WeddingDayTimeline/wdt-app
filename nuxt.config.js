@@ -139,6 +139,9 @@ export default {
      */
     // Add exception
     transpile: ['vee-validate/dist/rules'],
+    /*
+     ** Babel
+     */
     babel: {
       plugins: [
         '@babel/plugin-proposal-optional-chaining'

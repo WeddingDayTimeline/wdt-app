@@ -278,12 +278,13 @@
             >{{ status.submitBtnColor === 'is-success' ? '' : 'Verify' }}</b-button>
             <b-button
               v-if="!SignInMode && PrimarySignInChoice && !status.enterVerificationCode && !ForgotMode"
+              id="sign-in-btn"
               class="submit-btn full-width-button"
               :class="status.submitBtnColor === 'is-success' ? 'no-click' : ''"
               :type="status.submitBtnColor"
               :icon-left="status.submitBtnColor === 'is-success' ? 'check' : ''"
               :disabled="status.submitBtnDisabled"
-              @click="PrimarySignInChoice === 'email' ? SignUpWithEmail : SignUpWithPhone"
+              @click="PrimarySignInChoice === 'email' ? SignUpWithEmail() : SignUpWithPhone()"
             >{{ status.submitBtnColor === 'is-success' ? '' : 'Create Account' }}</b-button>
             <b-button
               v-if="ForgotMode"
@@ -320,7 +321,7 @@
               {{ BottomCopy.One }}
               <a
                 :class="SignInMode ? '' : 'primary'"
-                @click="SignUpMode"
+                @click="SignUpMode()"
               >{{ BottomCopy.Two }}</a>
             </div>
             <div v-else id="bottom-inner">
@@ -430,7 +431,7 @@ export default {
       const valid = await this.$refs.SignUpInObserver.validate()
 
       if (valid) {
-        this.signUpInWithPhone(this.FormatPhoneNumber())
+        this.signUpInWithPhone({ phone: this.FormatPhoneNumber(), method: 'signIn' })
       }
     },
     async VerifyCode(method) {
@@ -456,7 +457,7 @@ export default {
       const valid = await this.$refs.SignUpInObserver.validate()
 
       if (valid) {
-        this.signUpWithPhone(this.Input.Phone)
+        this.signUpInWithPhone({ phone: this.FormatPhoneNumber(), method: 'signUp' })
       }
     },
     SignUpMode(toMode = null) {
@@ -550,8 +551,9 @@ export default {
             return true
           }
 
-          async function checkIfApproved(email, uid) {
+          async function checkIfApproved(email, phone, uid) {
             console.log('email:', email)
+            console.log('phone:', phone)
             console.log('uid:', uid)
 
             let isOriginalContact = null
@@ -560,7 +562,7 @@ export default {
               // CHECK IF EMAIL IS ORIGINAL EMAIL FROM SIGNUP (IF NOT, CAN BYPASS isUserApproved CHECK)
               const isOriginal = await vm.isOriginalContact({
                 uid: deep(uid),
-                email: deep(email)
+                contact: deep(email) || deep(phone)
               })
               console.log('isOriginal:', isOriginal)
               isOriginalContact = isOriginal.data.original
@@ -618,7 +620,7 @@ export default {
               const google = await ifGoogleSignIn()
               if (google) {
                 if (calledFrom !== 'reauth') {
-                  checkIfApproved(user.email, user.uid)
+                  checkIfApproved(user.email, user.phoneNumber, user.uid)
                 } else {
                   console.log('vm.$route:', vm.$route)
                   vm.$root.context.redirect('/dash')
