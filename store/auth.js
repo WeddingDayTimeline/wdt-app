@@ -12,6 +12,7 @@ export const state = () => ({
     disableFields: false,
     submitBtnColor: 'is-primary',
     signUpRequested: false,
+    enterVerificationCode: false,
     justSignedUp: false,
     createProfileStartSlide: 0,
     showCreateProfile: false,
@@ -27,10 +28,6 @@ export const state = () => ({
 })
 
 export const actions = {
-  async nuxtServerInit({ commit }) {
-    //
-  },
-
   async signUpWithEmail({ commit, dispatch }, creds) {
     try {
       commit('GENERAL_REQUEST')
@@ -40,7 +37,7 @@ export const actions = {
         .auth()
         .createUserWithEmailAndPassword(creds.email, creds.password)
       console.log('createUser:', createUser)
-      const newUserFlow = await this.$server.createUser(
+      const newUserFlow = await this.$server.createUserWithEmail(
         createUser.user.email,
         createUser.user.uid,
         creds.provider ? creds.provider : 'password'
@@ -84,7 +81,7 @@ export const actions = {
     }
   },
 
-  async signIn({ commit, dispatch }, payload) {
+  async signInWithEmail({ commit, dispatch }, payload) {
     commit('GENERAL_REQUEST')
 
     try {
@@ -126,27 +123,103 @@ export const actions = {
       let errorStatus = {}
       if (errorCode) {
         switch (errorCode) {
-          case 'auth/wrong-password' || 'auth/user-not-found':
-            errorStatus = {
-              active: true,
-              type: 0,
-              text: 'Incorrect email or password.'
-            }
-            break
-          case 'auth/invalid-email':
-            errorStatus = {
-              active: true,
-              type: 1,
-              text: 'This seems to be an invalid email. Please try again.'
-            }
-            break
+        case 'auth/wrong-password' || 'auth/user-not-found':
+          errorStatus = {
+            active: true,
+            type: 0,
+            text: 'Incorrect email or password.'
+          }
+          break
+        case 'auth/invalid-email':
+          errorStatus = {
+            active: true,
+            type: 1,
+            text: 'This seems to be an invalid email. Please try again.'
+          }
+          break
         }
       }
       commit('GENERAL_ERROR', errorStatus)
     }
   },
 
-  async signInWithGoogle({ commit, dispatch }, payload) {
+  async signUpInWithPhone({ commit, dispatch }, phoneNumber) {
+    commit('GENERAL_REQUEST')
+
+    this.$client.useDeviceLanguage()
+    window.recaptchaVerifier = this.$client.reCaptchaVerifier()
+    console.log('window.recaptchaVerifier:', window.recaptchaVerifier)
+
+    try {
+      const confirmation = await this.$client.signUpInWithPhoneNumber(phoneNumber)
+      if (confirmation) {
+        console.log('confirmation:', confirmation)
+        commit('SEND_VCODE_SUCCESS')
+        window.confirmationResult = confirmation
+      }
+    } catch (error) {
+      const widget = await window.recaptchaVerifier.render()
+      if (widget) {
+        // TODO: HANDLE WITH NEW GLOBAL ERROR COMPONENT
+        const errorCode = error.code
+        const errorMessage = error.message
+        console.log(
+          'error during signUpInWithPhone action: ',
+          errorCode ? `error code: ${errorCode},` : null,
+          errorMessage ? `error message: ${errorMessage}` : `error: ${error}`
+        )
+
+        const errorStatus = {
+          active: true,
+          type: 0,
+          text: errorMessage
+        }
+        commit('GENERAL_ERROR', errorStatus)
+      }
+    }
+  },
+
+  async verifyCode({ commit, dispatch }, params) {
+    commit('GENERAL_REQUEST')
+
+    try {
+      const confirm = await this.$client.verifyCode(params.code)
+      if (confirm) {
+        // commit('UPDATE_USER', deep(confirm.user))
+        console.log('confirm from verifyCode action:', confirm)
+
+        if (params.method === 'signUp') {
+          const newUserFlow = await this.$server.createUserWithPhone(
+            params.phone,
+            confirm.user.uid
+          )
+          console.log('newUserFlow:', newUserFlow)
+          if (newUserFlow) {
+            commit('SIGN_UP_SUCCESS')
+          }
+        } else {
+          commit('SIGN_IN_SUCCESS')
+        }
+      }
+    } catch (error) {
+      const errorCode = error.code
+      const errorMessage = error.message
+      console.log(
+        'error during verifyCode action: ',
+        errorCode ? `error code: ${errorCode},` : null,
+        errorMessage ? `error message: ${errorMessage}` : `error: ${error}`
+      )
+
+      const errorStatus = {
+        active: true,
+        type: 0,
+        text: errorMessage
+      }
+      commit('GENERAL_ERROR', errorStatus)
+    }
+  },
+
+  signInWithGoogle({ commit, dispatch }, payload) {
     commit('GENERAL_REQUEST')
     // CREATE NEW GOOGLE AUTH PROVIDER AND SIGNIN, REDIRECTING BACK TO THIS PAGE AFTERWARDS
     const provider = new firebase.auth.GoogleAuthProvider()
@@ -180,20 +253,20 @@ export const actions = {
       let errorStatus = {}
       if (errorCode) {
         switch (errorCode) {
-          case 'auth/user-not-found':
-            errorStatus = {
-              active: true,
-              type: 2,
-              text: `We couldn't find an accout associated with this email. Please try again.`
-            }
-            break
-          case 'auth/invalid-email':
-            errorStatus = {
-              active: true,
-              type: 1,
-              text: 'This seems to be an invalid email. Please try again.'
-            }
-            break
+        case 'auth/user-not-found':
+          errorStatus = {
+            active: true,
+            type: 2,
+            text: `We couldn't find an accout associated with this email. Please try again.`
+          }
+          break
+        case 'auth/invalid-email':
+          errorStatus = {
+            active: true,
+            type: 1,
+            text: 'This seems to be an invalid email. Please try again.'
+          }
+          break
         }
       }
       // PREPARE UI
@@ -231,18 +304,18 @@ export const actions = {
     }
   },
 
-  async isOriginalEmail({ commit, dispatch }, params) {
+  async isOriginalContact({ commit, dispatch }, params) {
     try {
-      const isOriginal = await this.$server.isOriginalEmail(
+      const isOriginal = await this.$server.isOriginalContact(
         params.uid,
-        params.email
+        params.contact
       )
       commit('UPDATE_IS_ORIGINAL_EMAIL', isOriginal)
       console.log('isOriginal action:', isOriginal)
       return isOriginal
     } catch (error) {
       console.log(
-        'error while making axios call to isOriginalEmail serverMiddleware route'
+        'error while making axios call to isOriginalContact serverMiddleware route'
       )
     }
   },
@@ -346,6 +419,17 @@ export const mutations = {
       thinking: false,
       submitBtnDisabled: false,
       submitBtnColor: 'is-success',
+      error: { ...state.error, active: false }
+    }
+  },
+  SEND_VCODE_SUCCESS(state) {
+    state.status = {
+      ...state.status,
+      thinking: false,
+      submitBtnDisabled: false,
+      disableFields: false,
+      submitBtnColor: 'is-primary',
+      enterVerificationCode: true,
       error: { ...state.error, active: false }
     }
   },

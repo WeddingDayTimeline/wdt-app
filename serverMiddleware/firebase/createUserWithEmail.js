@@ -3,7 +3,7 @@ import initializeApp from './initializeApp.js'
 const admin = require('firebase-admin')
 const dotenv = require('dotenv').config()
 
-export const createUser = (req, res) => {
+export const createUserWithEmail = (req, res) => {
   // FIRST CHECK IF FIREBASE HAS BEEN INITIALIZED SERVER-SIDE. IF NOT, THEN INITIALIZE.
   initializeApp()
 
@@ -33,7 +33,7 @@ export const createUser = (req, res) => {
     console.log('req.body.email:', req.body.email)
     const userData = {
       onboarded: req.body.provider === 'google.com',
-      originalEmailAtSignUp: req.body.email
+      originalContactAtSignUp: req.body.email
     }
 
     const setDoc = db

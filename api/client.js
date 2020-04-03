@@ -22,5 +22,27 @@ export default () => ({
         if (process.client) {
             firebase.auth().signOut()
         }
+    },
+    useDeviceLanguage() {
+        if (process.client) {
+            return firebase.auth().useDeviceLanguage()
+        }
+    },
+    reCaptchaVerifier() {
+        return new firebase.auth.RecaptchaVerifier('sign-in-btn', {
+            size: 'invisible',
+            callback: function(response) {
+              // ReCAPTCHA solved.
+              console.log('passed recaptcha!')
+            }
+        })
+    },
+    async signUpInWithPhoneNumber(number) {
+        console.log('window.recaptchaVerifier:', window.recaptchaVerifier)
+        console.log('number:', number)
+        return await firebase.auth().signInWithPhoneNumber(number, window.recaptchaVerifier)
+    },
+    async verifyCode(code) {
+        return await confirmationResult.confirm(code)
     }
 })

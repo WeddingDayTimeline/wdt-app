@@ -62,8 +62,8 @@
                 <a
                   class="alt-primary-signinup"
                   :class="status.error.active || ForgotMode ? 'no-click hide' : ''"
-                  @click="SetPrimarySignIn(PrimarySignInChoice === 'email' ? 'phone' : 'email')"
-                >{{ AltPrimarySignInUpCopy }}</a>
+                  @click="SetPrimarySignIn(null)"
+                >Try another sign-in method</a>
                 <validation-provider
                   class="input-validation-provider"
                   rules="email"
@@ -149,6 +149,7 @@
               id="primary-signin-phone"
             >
               <div
+                v-if="!status.enterVerificationCode"
                 id="input-cont-top"
               >
                 <span class="phone-plus">+ </span>
@@ -195,8 +196,8 @@
                 <a
                   class="alt-primary-signinup"
                   :class="status.error.active || ForgotMode ? 'no-click hide' : ''"
-                  @click="SetPrimarySignIn(PrimarySignInChoice === 'email' ? 'phone' : 'email')"
-                >{{ AltPrimarySignInUpCopy }}</a>
+                  @click="SetPrimarySignIn(null)"
+                >Choose another sign-in method</a>
                 <!-- First/Last name start -->
                 <div v-if="!SignInMode" class="first-last-name">
                   <b-field>
@@ -220,6 +221,31 @@
                 </div>
                 <!-- First/Last name end -->
               </div>
+              <!-- Verification Code start -->
+              <div
+                v-if="status.enterVerificationCode"
+                id="input-cont-top"
+              >
+                <validation-provider
+                  class="input-validation-provider verification-code-provider"
+                  rules="numeric"
+                  mode="lazy"
+                  v-slot="{errors}"
+                  ref="ValidationVerificationCode"
+                >
+                  <b-field :message="errors[0]">
+                    <b-input
+                      class="input"
+                      placeholder="eg. 836545"
+                      type="text"
+                      autofocus="true"
+                      :readonly="status.disableFields || ReauthQuery"
+                      v-model="Input.VerificationCode"
+                    />
+                  </b-field>
+                </validation-provider>
+              </div>
+              <!-- Verification Code end -->
             </div>
             <!-- Primary sign-in phone end -->
             <b-message v-if="status.error.active" type="is-danger" size="is-small" has-icon>
@@ -232,16 +258,26 @@
               </span>
             </b-message>
             <b-button
-              v-if="SignInMode && !ForgotMode"
+              v-if="SignInMode && PrimarySignInChoice && !status.enterVerificationCode && !ForgotMode"
+              id="sign-in-btn"
               class="submit-btn full-width-button"
               :class="status.submitBtnColor === 'is-success' ? 'no-click' : ''"
               :type="status.submitBtnColor"
               :icon-left="status.submitBtnColor === 'is-success' ? 'check' : ''"
               :disabled="status.submitBtnDisabled"
-              @click="PrimarySignInChoice === 'email' ? SignInWithEmail : SignInWithPhone"
-            >{{ status.submitBtnColor === 'is-success' ? '' : (PrimarySignInChoice === 'email' ? 'Sign in' : 'Send Verification Code') }}</b-button>
+              @click="PrimarySignInChoice === 'email' ? SignInWithEmail() : SignInWithPhone()"
+            >{{ status.submitBtnColor === 'is-success' ? '' : (PrimarySignInChoice === 'phone' ? 'Send Verification Code *' : 'Sign in') }}</b-button>
             <b-button
-              v-if="!SignInMode && !ForgotMode"
+              v-if="PrimarySignInChoice && status.enterVerificationCode && !ForgotMode"
+              class="submit-btn full-width-button"
+              :class="status.submitBtnColor === 'is-success' ? 'no-click' : ''"
+              :type="status.submitBtnColor"
+              :icon-left="status.submitBtnColor === 'is-success' ? 'check' : ''"
+              :disabled="status.submitBtnDisabled"
+              @click="VerifyCode(SignInMode ? 'signIn' : 'signUp')"
+            >{{ status.submitBtnColor === 'is-success' ? '' : 'Verify' }}</b-button>
+            <b-button
+              v-if="!SignInMode && PrimarySignInChoice && !status.enterVerificationCode && !ForgotMode"
               class="submit-btn full-width-button"
               :class="status.submitBtnColor === 'is-success' ? 'no-click' : ''"
               :type="status.submitBtnColor"
@@ -330,7 +366,8 @@ export default {
         Name: {
           First: '',
           Last: ''
-        }
+        },
+        VerificationCode: ''
       },
       ResetPasswordBtnClicked: false,
       PasswordResetEmailSent: false,
@@ -343,9 +380,6 @@ export default {
     }),
     HeaderCopy() {
       return this.SignInMode ? 'Sign In' : 'Sign Up'
-    },
-    AltPrimarySignInUpCopy() {
-      return `Sign ${this.SignInMode ? 'in' : 'up'} with ${this.PrimarySignInChoice === 'email' ? 'phone number' : 'email'} instead.`
     },
     BottomCopy() {
       if (this.ReauthQuery) {
@@ -360,12 +394,15 @@ export default {
   methods: {
     ...mapActions('auth', [
       'signUpWithEmail',
-      'signIn',
+      'signInWithEmail',
+      'signUpWithPhone',
+      'signUpInWithPhone',
+      'verifyCode',
       'signInWithGoogle',
       'resetPassword',
       'hasOnboarded',
       'checkIfOnboarded',
-      'isOriginalEmail',
+      'isOriginalContact',
       'isUserApproved'
     ]),
     SetPrimarySignIn(option) {
@@ -377,25 +414,31 @@ export default {
       const valid = await this.$refs.SignUpInObserver.validate()
 
       if (valid) {
-        this.signIn({
+        this.signInWithEmail({
           reauthQuery: vm.ReauthQuery,
           email: vm.Input.Email,
           password: vm.Input.Password
         })
       }
     },
+    FormatPhoneNumber() {
+      console.log(`+${this.Input.CountryCode}${this.Input.Phone}`)
+      return `+${this.Input.CountryCode}${this.Input.Phone}`
+    },
     async SignInWithPhone() {
-      const vm = this
       // CHECK IF FIELDS ARE VALID, USING this.$refs.SignUpInObserver.validate() ASYNC METHOD
       const valid = await this.$refs.SignUpInObserver.validate()
 
-      // if (valid) {
-      //   this.signIn({
-      //     reauthQuery: vm.ReauthQuery,
-      //     email: vm.Input.Email,
-      //     password: vm.Input.Password
-      //   })
-      // }
+      if (valid) {
+        this.signUpInWithPhone(this.FormatPhoneNumber())
+      }
+    },
+    async VerifyCode(method) {
+      const valid = await this.$refs.SignUpInObserver.validate()
+
+      if (valid) {
+        this.verifyCode({ code: this.Input.VerificationCode, method })
+      }
     },
     async SignUpWithEmail() {
       // CHECK IF FIELDS ARE VALID, USING this.$refs.SignUpInObserver.validate() ASYNC METHOD
@@ -412,12 +455,9 @@ export default {
       // CHECK IF FIELDS ARE VALID, USING this.$refs.SignUpInObserver.validate() ASYNC METHOD
       const valid = await this.$refs.SignUpInObserver.validate()
 
-      // if (valid) {
-      //   this.signUpWithEmail({
-      //     email: this.Input.Email,
-      //     password: this.Input.Password
-      //   })
-      // }
+      if (valid) {
+        this.signUpWithPhone(this.Input.Phone)
+      }
     },
     SignUpMode(toMode = null) {
       // CHANGE SIGNIN MODE (SIGN-IN OR SIGN-UP)
@@ -514,23 +554,23 @@ export default {
             console.log('email:', email)
             console.log('uid:', uid)
 
-            let isOriginalEmail = null
+            let isOriginalContact = null
 
             if (!vm.status.signUpRequested && !vm.status.justSignedUp) {
               // CHECK IF EMAIL IS ORIGINAL EMAIL FROM SIGNUP (IF NOT, CAN BYPASS isUserApproved CHECK)
-              const isOriginal = await vm.isOriginalEmail({
+              const isOriginal = await vm.isOriginalContact({
                 uid: deep(uid),
                 email: deep(email)
               })
               console.log('isOriginal:', isOriginal)
-              isOriginalEmail = isOriginal.data.original
-              console.log('isOriginalEmail:', isOriginalEmail)
+              isOriginalContact = isOriginal.data.original
+              console.log('isOriginalContact:', isOriginalContact)
             } else {
-              isOriginalEmail = true
+              isOriginalContact = true
             }
 
-            if (isOriginalEmail) {
-              console.log('is original email!')
+            if (isOriginalContact) {
+              console.log('is original Contact!')
 
               // CHECK IF USER HAS FINISHED ONBOARDING
               if (
@@ -541,7 +581,7 @@ export default {
                 const approved = await vm.isUserApproved(deep(email))
                 console.log('approved in Login.vue:', approved)
 
-                // IF EMAIL ISN'T THE ORIGINAL EMAIL AT SIGNUP, OR IF ONBOARDED IS COMPLETE AND ADMIN HAS APPROVED BY EMAIL LINK, YOU PASS!
+                // IF EMAIL ISN'T THE ORIGINAL CONTACT AT SIGNUP, OR IF ONBOARDED IS COMPLETE AND ADMIN HAS APPROVED BY EMAIL LINK, YOU PASS!
                 if (approved.data.approved && approved.data.emailVerified) {
                   console.log('ok to redirect to dash')
                   console.log('vm.$route:', vm.$route)
@@ -559,8 +599,8 @@ export default {
                 vm.$store.commit('auth/SHOW_CREATE_PROFILE')
               }
             } else {
-              console.log('is not original email')
-              // IF USER EMAIL IS NOT THE ORIGINAL EMAIL AT SIGNUP, THIS MEANS THEY HAVE CHANGED IT WITHIN THE APP... WHICH MEANS THEY HAVE COMPLETED ONBOARDING AND HAVE BEEN APPROVED
+              console.log('is not original CONTACT')
+              // IF USER EMAIL IS NOT THE ORIGINAL CONTACT AT SIGNUP, THIS MEANS THEY HAVE CHANGED IT WITHIN THE APP... WHICH MEANS THEY HAVE COMPLETED ONBOARDING AND HAVE BEEN APPROVED
               console.log('vm.$route:', vm.$route)
               vm.$root.context.redirect('/dash')
             }

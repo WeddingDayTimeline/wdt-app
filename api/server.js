@@ -1,11 +1,11 @@
 import hubConfig from '~/hubConfig'
 
 export default $axios => ({
-    createUser(email, uid, provider) {
+    createUserWithEmail(email, uid, provider) {
         if (process.client) {
             return $axios({
                 method: 'post',
-                url: '/serverMiddleware/firebase/createUser',
+                url: '/serverMiddleware/firebase/createUserWithEmail',
                 params: {
                     app: hubConfig.api.appName
                 },
@@ -13,6 +13,21 @@ export default $axios => ({
                     email: email,
                     uid: uid,
                     provider: provider
+                }
+            })
+        }
+    },
+    createUserWithPhone(phone, uid) {
+        if (process.client) {
+            return $axios({
+                method: 'post',
+                url: '/serverMiddleware/firebase/createUserWithPhone',
+                params: {
+                    app: hubConfig.api.appName
+                },
+                data: {
+                    phone: phone,
+                    uid: uid,
                 }
             })
         }
@@ -60,15 +75,15 @@ export default $axios => ({
             })
         }
     },
-    isOriginalEmail(uid, email) {
+    isOriginalContact(uid, contact) {
         if (process.client) {
             return $axios({
                 method: 'get',
-                url: '/serverMiddleware/firebase/firestore/isOriginalSignUpEmail',
+                url: '/serverMiddleware/firebase/firestore/isOriginalSignUpContact',
                 params: {
                     app: hubConfig.api.appName,
                     uid: uid,
-                    email: email
+                    contact: contact
                 }
             })
         }

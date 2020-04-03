@@ -2,15 +2,15 @@ import initializeApp from '../initializeApp.js'
 const admin = require('firebase-admin')
 const dotenv = require('dotenv').config()
 
-export const isOriginalSignUpEmail = async (req, res) => {
+export const isOriginalSignUpContact = async (req, res) => {
   // FIRST CHECK IF FIREBASE HAS BEEN INITIALIZED SERVER-SIDE. IF NOT, THEN INITIALIZE.
   initializeApp()
 
   try {
-    // CHECK IF CURRENT EMAIL IS ORIGINAL EMAIL FROM SIGN UP
+    // CHECK IF CURRENT EMAIL IS ORIGINAL CONTACT FROM SIGN UP
     const db = admin.firestore()
     const uid = req.query.uid
-    const email = req.query.email
+    const contact = req.query.contact
 
     const doc = await db
       .collection('users')
@@ -18,14 +18,14 @@ export const isOriginalSignUpEmail = async (req, res) => {
       .get()
     console.log('getDoc:', doc)
     console.log('doc.data():', doc.data())
-    const originalEmail = doc.data().originalEmailAtSignUp
-    const isOriginal = originalEmail === email
+    const originalContact = doc.data().originalContactAtSignUp
+    const isOriginal = originalContact === contact
 
     // FINISH
     res.send({ original: isOriginal })
   } catch (error) {
     console.log(
-      'caught error in isOriginalSignUpEmail express route -- :',
+      'caught error in isOriginalSignUpContact express route -- :',
       error
     )
     res.status(404).end()
