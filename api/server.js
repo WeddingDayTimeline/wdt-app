@@ -27,5 +27,17 @@ export default $axios => ({
                 }
             })
         }
+    },
+    doesPhoneAccountExist(phone) {
+        if (process.client) {
+            return $axios({
+                method: 'get',
+                url: '/serverMiddleware/firebase/doesPhoneAccountExist',
+                params: {
+                    app: hubConfig.api.appName,
+                    phone: phone
+                }
+            })
+        }
     }
 })

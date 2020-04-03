@@ -3,6 +3,7 @@ import morgan from 'morgan'
 import cors from 'cors'
 import { auth } from './middleware/auth'
 import { isEmailVerified } from './firebase/isEmailVerified'
+import { doesPhoneAccountExist } from './firebase/doesPhoneAccountExist'
 import { updateProfile } from './firebase/updateProfile'
 const express = require('express')
 const app = express()
@@ -16,6 +17,7 @@ app.use(urlencoded({ extended: true }))
 app.use(morgan('dev'))
 
 app.get('/firebase/isEmailVerified', isEmailVerified)
+app.get('/firebase/doesPhoneAccountExist', doesPhoneAccountExist)
 app.post('/firebase/updateProfile', updateProfile)
 
 module.exports = {

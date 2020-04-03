@@ -29,7 +29,7 @@
           <div id="input-cont-inner" class="content" :class="ForgotMode ? 'forgot' : ''">
             <!-- Primary sign-in choice start -->
             <div
-              v-if="!PrimarySignInChoice"
+              v-if="!PrimaryAuthChoice"
               id="primary-signin-choice"
             >
               <span>{{ `Sign ${SignInMode ? 'in' : 'up'} with:` }}</span><br>
@@ -53,7 +53,7 @@
             <!-- Primary sign-in choice end -->
             <!-- Primary sign-in email start -->
             <div
-              v-if="PrimarySignInChoice === 'email'"
+              v-if="PrimaryAuthChoice === 'email'"
               id="primary-signin-email"
             >
               <div
@@ -145,7 +145,7 @@
             <!-- Primary sign-in email end -->
             <!-- Primary sign-in phone start -->
             <div
-              v-if="PrimarySignInChoice === 'phone'"
+              v-if="PrimaryAuthChoice === 'phone'"
               id="primary-signin-phone"
             >
               <div
@@ -258,17 +258,17 @@
               </span>
             </b-message>
             <b-button
-              v-if="SignInMode && PrimarySignInChoice && !status.enterVerificationCode && !ForgotMode"
+              v-if="SignInMode && PrimaryAuthChoice && !status.enterVerificationCode && !ForgotMode"
               id="sign-in-btn"
               class="submit-btn full-width-button"
               :class="status.submitBtnColor === 'is-success' ? 'no-click' : ''"
               :type="status.submitBtnColor"
               :icon-left="status.submitBtnColor === 'is-success' ? 'check' : ''"
               :disabled="status.submitBtnDisabled"
-              @click="PrimarySignInChoice === 'email' ? SignInWithEmail() : SignInWithPhone()"
-            >{{ status.submitBtnColor === 'is-success' ? '' : (PrimarySignInChoice === 'phone' ? 'Send Verification Code *' : 'Sign in') }}</b-button>
+              @click="PrimaryAuthChoice === 'email' ? SignInWithEmail() : SignInWithPhone()"
+            >{{ status.submitBtnColor === 'is-success' ? '' : (PrimaryAuthChoice === 'phone' ? 'Send Verification Code *' : 'Sign in') }}</b-button>
             <b-button
-              v-if="PrimarySignInChoice && status.enterVerificationCode && !ForgotMode"
+              v-if="PrimaryAuthChoice && status.enterVerificationCode && !ForgotMode"
               class="submit-btn full-width-button"
               :class="status.submitBtnColor === 'is-success' ? 'no-click' : ''"
               :type="status.submitBtnColor"
@@ -277,14 +277,14 @@
               @click="VerifyCode(SignInMode ? 'signIn' : 'signUp')"
             >{{ status.submitBtnColor === 'is-success' ? '' : 'Verify' }}</b-button>
             <b-button
-              v-if="!SignInMode && PrimarySignInChoice && !status.enterVerificationCode && !ForgotMode"
+              v-if="!SignInMode && PrimaryAuthChoice && !status.enterVerificationCode && !ForgotMode"
               id="sign-in-btn"
               class="submit-btn full-width-button"
               :class="status.submitBtnColor === 'is-success' ? 'no-click' : ''"
               :type="status.submitBtnColor"
               :icon-left="status.submitBtnColor === 'is-success' ? 'check' : ''"
               :disabled="status.submitBtnDisabled"
-              @click="PrimarySignInChoice === 'email' ? SignUpWithEmail() : SignUpWithPhone()"
+              @click="PrimaryAuthChoice === 'email' ? SignUpWithEmail() : SignUpWithPhone()"
             >{{ status.submitBtnColor === 'is-success' ? '' : 'Create Account' }}</b-button>
             <b-button
               v-if="ForgotMode"
@@ -358,7 +358,7 @@ export default {
       FirebaseUIInit: false,
       SignInMode: true,
       ForgotMode: false,
-      PrimarySignInChoice: null,
+      PrimaryAuthChoice: null,
       Input: {
         Email: '',
         Password: '',
@@ -373,6 +373,14 @@ export default {
       ResetPasswordBtnClicked: false,
       PasswordResetEmailSent: false,
       ReauthQuery: false
+    }
+  },
+  watch: {
+    status(newVal, oldVal) {
+      if (oldVal.recaptchaPassed === (newVal.recaptchaPassed - 1)) {
+        console.log('watched status and running onauthstatechange')
+        this.OnAuthStateChange()
+      }
     }
   },
   computed: {
@@ -404,7 +412,7 @@ export default {
       'isEmailVerified'
     ]),
     SetPrimarySignIn(option) {
-      this.PrimarySignInChoice = option
+      this.PrimaryAuthChoice = option
     },
     async SignInWithEmail() {
       const vm = this
@@ -428,7 +436,7 @@ export default {
       const valid = await this.$refs.SignUpInObserver.validate()
 
       if (valid) {
-        this.signUpInWithPhone({ phone: this.FormatPhoneNumber(), method: 'signIn' })
+        this.signUpInWithPhone({ phone: deep(this.FormatPhoneNumber()), method: 'signIn' })
       }
     },
     async VerifyCode(method) {
@@ -454,7 +462,7 @@ export default {
       const valid = await this.$refs.SignUpInObserver.validate()
 
       if (valid) {
-        this.signUpInWithPhone({ phone: this.FormatPhoneNumber(), method: 'signUp' })
+        this.signUpInWithPhone({ phone: deep(this.FormatPhoneNumber()), method: 'signUp' })
       }
     },
     SignUpMode(toMode = null) {
@@ -512,11 +520,15 @@ export default {
     },
     OnKeyUpEnter() {
       // DIFFERENT FUNCTIONS FOR ENTER-KEY-PRESS EVENT DEPENDING ON STATE
-      if (this.SignInMode && !this.ForgotMode) {
-        this.SignIn()
-      } else if (!this.SignInMode && !this.ForgotMode) {
-        this.SignUp()
-      } else if (this.ForgotMode) {
+      let signInMode = this.SignInMode
+      let forgotMode = this.ForgotMode
+      let primaryAuthChoice = this.PrimaryAuthChoice
+
+      if (signInMode && !forgotMode) {
+        primaryAuthChoice === 'email' ? this.SignInWithEmail() : this.SignInWithPhone()
+      } else if (!signInMode && !forgotMode) {
+        primaryAuthChoice === 'email' ? this.SignUpWithEmail() : this.SignUpWithPhone()
+      } else if (forgotMode) {
         this.ResetPassword()
       }
     },
@@ -542,9 +554,10 @@ export default {
         vm.Loading = false
       }
     },
-    OnAuthStateChange(calledFrom) {
+    OnAuthStateChange(calledFrom = 'other') {
       const vm = this
       firebase.auth().onAuthStateChanged(function(user) {
+        console.log('OnAuthStateChange')
         // IF USER IS SIGNED IN
         if (user) {
 
@@ -555,11 +568,12 @@ export default {
             }
 
             if (!vm.ReauthQuery || (vm.ReauthQuery && vm.status.reAuthorized)) {
-              // const google = user.providerData[0].providerId === 'google.com'
-              if (calledFrom !== 'reauth' && user.email) {
+              const provider = user.providerData[0].providerId
+              if (calledFrom !== 'reauth' && provider === 'password') {
+                console.log('user:', user)
                 console.log('user.email:', user.email)
                 vm.CheckIfVerified(user.email)
-              } else if (user.phoneNumber) {
+              } else if (provider === 'phone' && vm.status.recaptchaPassed > 0) {
                 vm.$root.context.redirect('/dash')
               }
             }

@@ -15,6 +15,7 @@ export const state = () => ({
     enterVerificationCode: false,
     justSignedUp: false,
     emailVerified: null,
+    recaptchaPassed: 0,
     error: {
       active: false,
       type: 0,
@@ -135,21 +136,37 @@ export const actions = {
     commit('GENERAL_REQUEST')
     console.log('signUpInWithPhone action!')
     this.$client.useDeviceLanguage()
-    window.recaptchaVerifier = this.$client.reCaptchaVerifier()
+    // The below must stay here in actions because of the callback
+    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('sign-in-btn', {
+      size: 'invisible',
+      callback: function(response) {
+        // ReCAPTCHA solved.
+        commit('PASS_RECAPTCHA')
+      }
+    })
     console.log('window.recaptchaVerifier:', window.recaptchaVerifier)
 
     try {
-      const confirm = await this.$client.signUpInWithPhoneNumber(params.phone)
-      if (confirm) {
-        console.log('confirm:', confirm)
-        commit('SEND_VCODE_SUCCESS')
-        window.confirmationResult = confirm
+      let pass = null
+      if (params.method === 'signIn') {
+        pass = await this.$server.doesPhoneAccountExist(params.phone)
+      }
 
-        // console.log('params.method:', params.method)
-        // if (params.method === 'signUp') {
-        //   console.log('params.method:', params.method)
-        //   commit('SIGN_UP_SUCCESS')
-        // }
+      if ((pass && pass.data.exists) || params.method === 'signUp') {
+        console.log('log before confirm')
+        const confirm = await this.$client.signUpInWithPhoneNumber(params.phone)
+        if (confirm) {
+          console.log('confirm:', confirm)
+          commit('SEND_VCODE_SUCCESS')
+          window.confirmationResult = confirm
+        }
+      } else {
+        const errorStatus = {
+          active: true,
+          type: 0,
+          text: `There's no account associated with this phone number.`
+        }
+        commit('GENERAL_ERROR', errorStatus)
       }
     } catch (error) {
       const widget = await window.recaptchaVerifier.render()
@@ -179,18 +196,8 @@ export const actions = {
     try {
       const confirm = await this.$client.verifyCode(params.code)
       if (confirm) {
-        // commit('UPDATE_USER', deep(confirm.user))
-        console.log('confirm from verifyCode action:', confirm)
-
         if (params.method === 'signUp') {
-          const newUserFlow = await this.$server.createUserWithPhone(
-            params.phone,
-            confirm.user.uid
-          )
-          console.log('newUserFlow:', newUserFlow)
-          if (newUserFlow) {
-            commit('SIGN_UP_SUCCESS')
-          }
+          commit('SIGN_UP_SUCCESS')
         } else {
           commit('SIGN_IN_SUCCESS')
         }
@@ -412,6 +419,12 @@ export const mutations = {
   },
   UPDATE_USER(state, user) {
     state.user = user
+  },
+  RESET_RECAPTCHA(state) {
+    state.status.recaptchaPassed = false
+  },
+  PASS_RECAPTCHA(state) {
+    state.status.recaptchaPassed++
   }
 }
 
