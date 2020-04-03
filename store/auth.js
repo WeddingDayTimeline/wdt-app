@@ -14,11 +14,7 @@ export const state = () => ({
     signUpRequested: false,
     enterVerificationCode: false,
     justSignedUp: false,
-    createProfileStartSlide: 0,
-    showCreateProfile: false,
-    onboardedConfirmed: null,
-    isOriginalEmail: null,
-    userApproved: null,
+    emailVerified: null,
     error: {
       active: false,
       type: 0,
@@ -37,18 +33,10 @@ export const actions = {
         .auth()
         .createUserWithEmailAndPassword(creds.email, creds.password)
       console.log('createUser:', createUser)
-      const newUserFlow = await this.$server.createUserWithEmail(
-        createUser.user.email,
-        createUser.user.uid,
-        creds.provider ? creds.provider : 'password'
-      )
-      console.log('newUserFlow:', newUserFlow)
-      if (newUserFlow) {
-        commit('SIGN_UP_SUCCESS')
-        // SEND VERIFICATION EMAIL TO NEW USER
-        const user = firebase.auth().currentUser
-        user.sendEmailVerification()
-      }
+      commit('SIGN_UP_SUCCESS')
+      // SEND VERIFICATION EMAIL TO NEW USER
+      const user = firebase.auth().currentUser
+      user.sendEmailVerification()
     } catch (error) {
       const errorCode = error.code
       const errorMessage = error.message
@@ -145,7 +133,7 @@ export const actions = {
 
   async signUpInWithPhone({ commit, dispatch }, params) {
     commit('GENERAL_REQUEST')
-    console.log('signUpInWithPhone action!');
+    console.log('signUpInWithPhone action!')
     this.$client.useDeviceLanguage()
     window.recaptchaVerifier = this.$client.reCaptchaVerifier()
     console.log('window.recaptchaVerifier:', window.recaptchaVerifier)
@@ -157,18 +145,11 @@ export const actions = {
         commit('SEND_VCODE_SUCCESS')
         window.confirmationResult = confirm
 
-        console.log('params.method:', params.method)
-        if (params.method === 'signUp') {
-          console.log('params.method:', params.method)
-          const newUserFlow = await this.$server.createUserWithPhone(
-            params.phone,
-            confirm.user.uid
-          )
-          console.log('newUserFlow:', newUserFlow)
-          if (newUserFlow) {
-            commit('SIGN_UP_SUCCESS')
-          }
-        }
+        // console.log('params.method:', params.method)
+        // if (params.method === 'signUp') {
+        //   console.log('params.method:', params.method)
+        //   commit('SIGN_UP_SUCCESS')
+        // }
       }
     } catch (error) {
       const widget = await window.recaptchaVerifier.render()
@@ -287,61 +268,15 @@ export const actions = {
     }
   },
 
-  async hasOnboarded({ commit, dispatch }, uid) {
-    // TRIGGER AXIOS CALL WHEN ONBOARDING HAS COMPLETED (IN THIS CASE, ONBOARDING IS JUST UPDATING PROFILE NAME)
+  async isEmailVerified({ commit, dispatch }, email) {
     try {
-      const onboarded = await this.$server.hasOnboarded(uid)
-      const confirmed = onboarded.data.success
-      // Let confirmed = onboarded.data.success ? onboarded.data.success : false
-      commit('UPDATE_ONBOARDED_CONFIRMED', confirmed)
-      return confirmed
-    } catch (error) {
-      console.error(
-        'error while making axios call to hasOnboarded serverMiddleware route',
-        error
-      )
-    }
-  },
-
-  async checkIfOnboarded({ commit, dispatch }, uid) {
-    try {
-      const check = await this.$server.checkIfOnboarded(uid)
-      const onboarded = check.data.onboarded
-      commit('UPDATE_ONBOARDED_CONFIRMED', onboarded)
-      return onboarded
+      const verified = await this.$server.isEmailVerified(deep(email))
+      console.log('verified action :', verified)
+      commit('UPDATE_EMAIL_VERIFIED', verified)
+      return verified
     } catch (error) {
       console.log(
-        'Error getting firestore user document to check onboarded state:',
-        error
-      )
-    }
-  },
-
-  async isOriginalContact({ commit, dispatch }, params) {
-    try {
-      const isOriginal = await this.$server.isOriginalContact(
-        params.uid,
-        params.contact
-      )
-      commit('UPDATE_IS_ORIGINAL_EMAIL', isOriginal)
-      console.log('isOriginal action:', isOriginal)
-      return isOriginal
-    } catch (error) {
-      console.log(
-        'error while making axios call to isOriginalContact serverMiddleware route'
-      )
-    }
-  },
-
-  async isUserApproved({ commit, dispatch }, email) {
-    try {
-      const approved = await this.$server.isUserApproved(deep(email))
-      console.log('approved action :', approved)
-      commit('UPDATE_USER_APPROVED', approved)
-      return approved
-    } catch (error) {
-      console.log(
-        'error while making axios call to isUserApproved serverMiddleware route'
+        'error while making axios call to isEmailVerified serverMiddleware route'
       )
     }
   },
@@ -463,25 +398,16 @@ export const mutations = {
       onboardedConfirmed: onboarded
     }
   },
-  SHOW_CREATE_PROFILE(state, startSlide = 0) {
-    state.status = {
-      ...state.status,
-      justSignedUp: true,
-      thinking: false,
-      createProfileStartSlide: startSlide,
-      showCreateProfile: true
-    }
-  },
   UPDATE_IS_ORIGINAL_EMAIL(state, isOriginal) {
     state.status = {
       ...state.status,
       isOriginalEmail: isOriginal
     }
   },
-  UPDATE_USER_APPROVED(state, approved) {
+  UPDATE_EMAIL_VERIFIED(state, verified) {
     state.status = {
       ...state.status,
-      userApproved: approved
+      emailVerified: verified
     }
   },
   UPDATE_USER(state, user) {
@@ -491,7 +417,5 @@ export const mutations = {
 
 export const getters = {
   getUser: (state) => state.user,
-  getStatus: (state) => state.status,
-  getCreateProfileStartSlide: (state) => state.status.createProfileStartSlide,
-  getShowCreateProfile: (state) => state.status.showCreateProfile
+  getStatus: (state) => state.status
 }

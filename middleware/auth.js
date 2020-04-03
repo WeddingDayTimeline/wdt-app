@@ -24,27 +24,24 @@ export default function({ app, from, store, route, redirect }) {
     if (user) {
       /*
        * User is signed in.
-       * CHECK IF USER HAS BEEN APPROVED BY ADMIN BY EMAIL LINK
+       * CHECK IF EMAIL HAS BEEN VERIFIED
        */
-      async function checkIfApproved(email) {
-        const approved = await store.dispatch(
-          'auth/isUserApproved',
+      async function checkIfVerified(email) {
+        const verified = await store.dispatch(
+          'auth/isEmailVerified',
           deep(email)
         )
-        console.log('approved:', approved)
-        if (!approved.data.approved) {
-          if (route.fullPath != '/' && route.path != '/userApproved') {
-            console.log(
-              'REDIRECTING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-            )
-            // Return redirect('/')
-          } else {
+        if (!verified.data.emailVerified) {
+          if (route.fullPath != '/') {
+            return redirect('/')
           }
         }
       }
 
       try {
-        checkIfApproved(deep(user.email))
+        if (user.email) {
+          checkIfVerified(deep(user.email))
+        }
       } catch (error) {
         console.log(
           'error in auth.js middleware trying to check if user is approved',

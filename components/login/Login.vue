@@ -401,10 +401,7 @@ export default {
       'verifyCode',
       'signInWithGoogle',
       'resetPassword',
-      'hasOnboarded',
-      'checkIfOnboarded',
-      'isOriginalContact',
-      'isUserApproved'
+      'isEmailVerified'
     ]),
     SetPrimarySignIn(option) {
       this.PrimarySignInChoice = option
@@ -523,108 +520,47 @@ export default {
         this.ResetPassword()
       }
     },
+    async CheckIfVerified(email) {
+      let vm = this
+
+      if (
+        !vm.status.signUpRequested
+      ) {
+        // CHECK IF EMAIL HAS BEEN VERIFIED
+        const verified = await vm.isEmailVerified(deep(email))
+
+        if (verified.data.emailVerified) {
+          vm.$root.context.redirect('/dash')
+        } else {
+          // PREPARE UI & STATE
+          vm.SignInMode = true
+          vm.Loading = false
+        }
+      } else {
+        // PREPARE UI & STATE
+        vm.SignInMode = true
+        vm.Loading = false
+      }
+    },
     OnAuthStateChange(calledFrom) {
       const vm = this
-      firebase.auth().onAuthStateChanged(async function(user) {
+      firebase.auth().onAuthStateChanged(function(user) {
         // IF USER IS SIGNED IN
         if (user) {
-          async function ifGoogleSignIn() {
-            // CHECK IF USER WAS SIGNED IN WITH GOOGLE METHOD
-            const provider = user.providerData[0].providerId
-
-            if (provider === 'google.com') {
-              // IF SO, TRIGGER this.signUpWithEmail FOR SENDING ADMIN APPROVAL EMAIL
-              const signUpWithEmail = await this.signUpWithEmail({
-                email: deep(user.email),
-                password: deep(user.uid),
-                provider: deep(provider)
-              })
-              if (signUpWithEmail) {
-                // AND TRIGGER HasOnBoarded TO SET ONBOARDED STATE IN FIRESTORE USER DOC
-                console.log('running hasOnboarded()')
-                const hasOnboarded = await vm.hasOnboarded(deep(user.uid))
-                if (hasOnboarded) {
-                  return true
-                }
-              }
-            }
-            return true
-          }
-
-          async function checkIfApproved(email, phone, uid) {
-            console.log('email:', email)
-            console.log('phone:', phone)
-            console.log('uid:', uid)
-
-            let isOriginalContact = null
-
-            if (!vm.status.signUpRequested && !vm.status.justSignedUp) {
-              // CHECK IF EMAIL IS ORIGINAL EMAIL FROM SIGNUP (IF NOT, CAN BYPASS isUserApproved CHECK)
-              const isOriginal = await vm.isOriginalContact({
-                uid: deep(uid),
-                contact: deep(email) || deep(phone)
-              })
-              console.log('isOriginal:', isOriginal)
-              isOriginalContact = isOriginal.data.original
-              console.log('isOriginalContact:', isOriginalContact)
-            } else {
-              isOriginalContact = true
-            }
-
-            if (isOriginalContact) {
-              console.log('is original Contact!')
-
-              // CHECK IF USER HAS FINISHED ONBOARDING
-              if (
-                !vm.status.signUpRequested &&
-                (await vm.checkIfOnboarded(deep(uid)))
-              ) {
-                // CHECK IF USER HAS BEEN APPROVED BY ADMIN & EMAIL HAS BEEN VERIFIED
-                const approved = await vm.isUserApproved(deep(email))
-                console.log('approved in Login.vue:', approved)
-
-                // IF EMAIL ISN'T THE ORIGINAL CONTACT AT SIGNUP, OR IF ONBOARDED IS COMPLETE AND ADMIN HAS APPROVED BY EMAIL LINK, YOU PASS!
-                if (approved.data.approved && approved.data.emailVerified) {
-                  console.log('ok to redirect to dash')
-                  console.log('vm.$route:', vm.$route)
-                  vm.$root.context.redirect('/dash')
-                } else {
-                  // PREPARE UI & STATE
-                  vm.SignInMode = true
-                  vm.Loading = false
-                  vm.$store.commit('auth/SHOW_CREATE_PROFILE', 3)
-                }
-              } else {
-                // PREPARE UI & STATE
-                vm.SignInMode = true
-                vm.Loading = false
-                vm.$store.commit('auth/SHOW_CREATE_PROFILE')
-              }
-            } else {
-              console.log('is not original CONTACT')
-              // IF USER EMAIL IS NOT THE ORIGINAL CONTACT AT SIGNUP, THIS MEANS THEY HAVE CHANGED IT WITHIN THE APP... WHICH MEANS THEY HAVE COMPLETED ONBOARDING AND HAVE BEEN APPROVED
-              console.log('vm.$route:', vm.$route)
-              vm.$root.context.redirect('/dash')
-            }
-          }
 
           try {
-            // CALL THE FUNCTIONS DECLARED ABOVE, IN ORDER
-
             if (vm.ReauthQuery && !vm.status.reAuthorized) {
               vm.Loading = false
               vm.Input.Email = user.email
             }
 
             if (!vm.ReauthQuery || (vm.ReauthQuery && vm.status.reAuthorized)) {
-              const google = await ifGoogleSignIn()
-              if (google) {
-                if (calledFrom !== 'reauth') {
-                  checkIfApproved(user.email, user.phoneNumber, user.uid)
-                } else {
-                  console.log('vm.$route:', vm.$route)
-                  vm.$root.context.redirect('/dash')
-                }
+              // const google = user.providerData[0].providerId === 'google.com'
+              if (calledFrom !== 'reauth' && user.email) {
+                console.log('user.email:', user.email)
+                vm.CheckIfVerified(user.email)
+              } else if (user.phoneNumber) {
+                vm.$root.context.redirect('/dash')
               }
             }
           } catch (error) {

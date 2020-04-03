@@ -1,30 +1,21 @@
 <template>
   <div id="auth-page-wrapper">
-    <login v-if="!ShowCreateProfile" />
-    <create-profile v-if="ShowCreateProfile" />
+    <login />
   </div>
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
 import Login from '~/components/login/Login.vue'
-import CreateProfile from '~/components/login/CreateProfile.vue'
 
 export default {
   name: 'Auth',
   components: {
-    Login,
-    CreateProfile
+    Login
   },
   data() {
     return {
       //
     }
-  },
-  computed: {
-    ...mapGetters({
-      ShowCreateProfile: 'auth/getShowCreateProfile'
-    })
   }
 }
 </script>
