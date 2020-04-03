@@ -35,6 +35,15 @@ export const actions = {
         .createUserWithEmailAndPassword(creds.email, creds.password)
       console.log('createUser:', createUser)
       commit('SIGN_UP_SUCCESS')
+      const update = await dispatch('updateProfile', {
+        uid: createUser.user.uid,
+        userData: { displayName: creds.name }
+      })
+      if (!update) {
+        console.log('error updating displayName upon signIn in signUpWithEmail action');
+      } else {
+        console.log('update:', update)
+      }
       // SEND VERIFICATION EMAIL TO NEW USER
       const user = firebase.auth().currentUser
       user.sendEmailVerification()
@@ -198,6 +207,14 @@ export const actions = {
       if (confirm) {
         if (params.method === 'signUp') {
           commit('SIGN_UP_SUCCESS')
+          console.log('confirm in verifyCode:', confirm)
+          const update = await dispatch('updateProfile', {
+            uid: confirm.user.uid,
+            userData: { displayName: params.name }
+          })
+          if (!update) {
+            console.log('error updating displayName upon signIn in verifyCode action');
+          }
         } else {
           commit('SIGN_IN_SUCCESS')
         }

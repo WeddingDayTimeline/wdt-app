@@ -6,7 +6,7 @@ export default () => ({
         if (process.client) {
             const user = firebase.auth().currentUser;
             const credential = firebase.auth.EmailAuthProvider.credential(
-                email, 
+                email,
                 password
             )
             return await user.reauthenticateWithCredential(credential)

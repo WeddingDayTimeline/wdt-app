@@ -431,6 +431,9 @@ export default {
       console.log(`+${this.Input.CountryCode}${this.Input.Phone}`)
       return `+${this.Input.CountryCode}${this.Input.Phone}`
     },
+    FullName() {
+      return `${this.Input.Name.First} ${this.Input.Name.Last}`
+    },
     async SignInWithPhone() {
       // CHECK IF FIELDS ARE VALID, USING this.$refs.SignUpInObserver.validate() ASYNC METHOD
       const valid = await this.$refs.SignUpInObserver.validate()
@@ -443,7 +446,7 @@ export default {
       const valid = await this.$refs.SignUpInObserver.validate()
 
       if (valid) {
-        this.verifyCode({ code: this.Input.VerificationCode, method })
+        this.verifyCode({ code: this.Input.VerificationCode, name: !this.SignInMode ? this.FullName() : null, method })
       }
     },
     async SignUpWithEmail() {
@@ -453,7 +456,8 @@ export default {
       if (valid) {
         this.signUpWithEmail({
           email: this.Input.Email,
-          password: this.Input.Password
+          password: this.Input.Password,
+          name: this.FullName()
         })
       }
     },
