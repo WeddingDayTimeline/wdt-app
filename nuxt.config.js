@@ -139,6 +139,11 @@ export default {
      */
     // Add exception
     transpile: ['vee-validate/dist/rules'],
+    babel: {
+      plugins: [
+        '@babel/plugin-proposal-optional-chaining'
+      ]
+    },
     extend(config, ctx) {
       config.node = {
         fs: 'empty'
