@@ -302,6 +302,7 @@
               <span class="or">or</span>
               <hr />
             </div>
+            <!-- Google sign-in button start -->
             <b-button
               class="google-signin-btn full-width-button"
               type="is-google"
@@ -311,6 +312,18 @@
             >
               <div class="google-logo" />Sign in with Google
             </b-button>
+            <!-- Google sign-in button end -->
+            <!-- Facebook sign-in button start -->
+            <b-button
+              class="google-signin-btn full-width-button"
+              type="is-google"
+              inverted
+              :disabled="status.submitBtnDisabled"
+              @click="signUpInWithFacebook({method: SignInMode ? 'signIn' : 'signUp'})"
+            >
+              Sign in with Facebook
+            </b-button>
+            <!-- Facebook sign-in button end -->
           </div>
           <div
             v-if="!ReauthQuery || (ReauthQuery && ForgotMode)"
@@ -408,6 +421,7 @@ export default {
       'signUpInWithPhone',
       'verifyCode',
       'signInWithGoogle',
+      'signUpInWithFacebook',
       'resetPassword',
       'isEmailVerified'
     ]),
@@ -536,6 +550,31 @@ export default {
         this.ResetPassword()
       }
     },
+    // async FirebaseRedirectResult() {
+    //   try {
+    //     console.log('FirebaseRedirectResult()');
+    //     const result = await firebase.auth().getRedirectResult()
+    //     console.log('result:', result)
+    //     if (result.credential) {
+    //       // This gives you a Facebook Access Token. You can use it to access the Facebook API.
+    //       const token = result.credential.accessToken
+    //       // ...
+    //     }
+    //     // The signed-in user info.
+    //     const user = result.user
+    //     console.log('user:', user)
+    //     console.log('facebook user from redirect:', user)
+    //   } catch (error) {
+    //     // Handle Errors here.
+    //     const errorCode = error.code
+    //     const errorMessage = error.message
+    //     // The email of the user's account used.
+    //     const email = error.email
+    //     // The firebase.auth.AuthCredential type that was used.
+    //     const credential = error.credential
+    //     // ...
+    //   }
+    // },
     async CheckIfVerified(email) {
       let vm = this
 
@@ -564,7 +603,6 @@ export default {
         console.log('OnAuthStateChange')
         // IF USER IS SIGNED IN
         if (user) {
-
           try {
             if (vm.ReauthQuery && !vm.status.reAuthorized) {
               vm.Loading = false
@@ -579,6 +617,8 @@ export default {
                 vm.CheckIfVerified(user.email)
               } else if (provider === 'phone' && vm.status.recaptchaPassed > 0) {
                 vm.$root.context.redirect('/dash')
+              } else if (provider === 'facebook' && !this.SignInMode) {
+                // vm.$root.context.redirect('/dash')
               }
             }
           } catch (error) {
@@ -599,6 +639,7 @@ export default {
     if (this.$route.query.reauth) {
       this.ReauthQuery = true
     }
+    // this.FirebaseRedirectResult()
     this.OnAuthStateChange('mounted')
   }
 }

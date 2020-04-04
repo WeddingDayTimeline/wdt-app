@@ -4,14 +4,14 @@ export default $axios => ({
     updateProfile(uid, userData) {
         if (process.client) {
             return $axios({
-                method: 'post',
-                url: '/serverMiddleware/firebase/updateProfile',
-                params: {
-                app: hubConfig.api.appName
+                    method: 'post',
+                    url: '/serverMiddleware/firebase/updateProfile',
+                    params: {
+                    app: hubConfig.api.appName
                 },
                 data: {
-                uid: uid,
-                userData: userData
+                    uid: uid,
+                    userData: userData
                 }
             })
         }
@@ -28,14 +28,14 @@ export default $axios => ({
             })
         }
     },
-    doesPhoneAccountExist(phone) {
+    doesAccountExist(userData) {
         if (process.client) {
             return $axios({
                 method: 'get',
-                url: '/serverMiddleware/firebase/doesPhoneAccountExist',
+                url: '/serverMiddleware/firebase/doesAccountExist',
                 params: {
                     app: hubConfig.api.appName,
-                    phone: phone
+                    userData: userData
                 }
             })
         }

@@ -75,7 +75,7 @@ export const actions = {
             break
         }
       }
-      commit('GENERAL_ERROR', errorStatus)
+      dispatch('generalError', errorStatus)
     }
   },
 
@@ -137,7 +137,7 @@ export const actions = {
           break
         }
       }
-      commit('GENERAL_ERROR', errorStatus)
+      dispatch('generalError', errorStatus)
     }
   },
 
@@ -158,7 +158,7 @@ export const actions = {
     try {
       let pass = null
       if (params.method === 'signIn') {
-        pass = await this.$server.doesPhoneAccountExist(params.phone)
+        pass = await this.$server.doesAccountExist({ method: 'phone', login: params.phone })
       }
 
       if ((pass && pass.data.exists) || params.method === 'signUp') {
@@ -175,7 +175,7 @@ export const actions = {
           type: 0,
           text: `There's no account associated with this phone number.`
         }
-        commit('GENERAL_ERROR', errorStatus)
+        dispatch('generalError', errorStatus)
       }
     } catch (error) {
       const widget = await window.recaptchaVerifier.render()
@@ -194,7 +194,7 @@ export const actions = {
           type: 0,
           text: errorMessage
         }
-        commit('GENERAL_ERROR', errorStatus)
+        dispatch('generalError', errorStatus)
       }
     }
   },
@@ -233,7 +233,7 @@ export const actions = {
         type: 0,
         text: errorMessage
       }
-      commit('GENERAL_ERROR', errorStatus)
+      dispatch('generalError', errorStatus)
     }
   },
 
@@ -241,7 +241,48 @@ export const actions = {
     commit('GENERAL_REQUEST')
     // CREATE NEW GOOGLE AUTH PROVIDER AND SIGNIN, REDIRECTING BACK TO THIS PAGE AFTERWARDS
     const provider = new firebase.auth.GoogleAuthProvider()
+    firebase.auth().useDeviceLanguage()
     firebase.auth().signInWithRedirect(provider)
+  },
+
+  async signUpInWithFacebook({ commit, dispatch }, params) {
+    let vm = this
+    commit('GENERAL_REQUEST')
+    try {
+      // CREATE NEW GOOGLE AUTH PROVIDER AND SIGNIN, REDIRECTING BACK TO THIS PAGE AFTERWARDS
+      const provider = new firebase.auth.FacebookAuthProvider()
+      firebase.auth().useDeviceLanguage()
+      const signedIn = await firebase.auth().signInWithPopup(provider)
+      if (signedIn) {
+        console.log('signIn:', signedIn)
+        console.log('vm:', vm)
+        if (params.method === 'signUp') {
+          vm.app.context.redirect('/dash')
+        } else {
+          const user = firebase.auth().currentUser
+          console.log('method is SignIn')
+          const account = await this.$server.doesAccountExist({ method: 'facebook', login: deep(user.uid) })
+          console.log('account:', account)
+          if (account && account.data.exists) {
+            vm.app.context.redirect('/dash')
+          } else {
+            const errorStatus = {
+              active: true,
+              type: 0,
+              text: `There's no account associated with this Facebook account.`
+            }
+            dispatch('generalError', errorStatus)
+          }
+        }
+      }
+    } catch (error) {
+      const errorStatus = {
+        active: true,
+        type: 0,
+        text: `There's no account associated with this Facebook account.`
+      }
+      dispatch('generalError', errorStatus)
+    }
   },
 
   async resetPassword({ commit, dispatch }, email) {
@@ -288,7 +329,7 @@ export const actions = {
         }
       }
       // PREPARE UI
-      commit('GENERAL_ERROR', errorStatus)
+      dispatch('generalError', errorStatus)
     }
   },
 
@@ -325,6 +366,13 @@ export const actions = {
   updateUser({ commit, dispatch }) {
     const user = firebase.auth().currentUser
     commit('UPDATE_USER', user)
+  },
+
+  generalError({ commit, dispatch }, errorStatus) {
+    commit('GENERAL_ERROR', errorStatus)
+    setTimeout(() => {
+      commit('GENERAL_ERROR_TEMP_REVERT')
+    }, 4500)
   }
 }
 
@@ -370,13 +418,12 @@ export const mutations = {
       submitBtnTempColor: 'is-warning',
       error: { ...state.error, errorStatus }
     }
-
-    setTimeout(() => {
-      state.status = {
-        ...state.status,
-        submitBtnTempColor: 'is-primary'
-      }
-    }, 4500)
+  },
+  GENERAL_ERROR_TEMP_REVERT(state) {
+    state.status = {
+      ...state.status,
+      submitBtnTempColor: 'is-primary'
+    }
   },
   RESET_ERROR_STATE(state) {
     state.status = {
