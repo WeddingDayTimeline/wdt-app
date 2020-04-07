@@ -36,11 +36,6 @@
   padding: 10px !important;
 }
 
-// PROGRESS BAR BACKGROUND TO TRANSPARENT
-.vs-progress-primary {
-  background: #fff0 !important;
-}
-
 // ALT SIGN-IN BUTTON AS BUEFY BUTTON
 .alt-signin-btn {
   color: material-color('blue-grey', '600');
@@ -52,21 +47,22 @@
 
   & .alt-logo {
     display: inline-block;
-    width: calc(1rem + 6px);
     height: calc(1rem + 6px);
     margin: 0 0.5rem 0 0;
     background-image: $google-logo;
     background-repeat: no-repeat;
     background-position: center;
     border-radius: 50%;
-  }
-
-  & .google-logo {
-    background-image: $google-logo;
     border: 3px solid transparent;
   }
 
+  & .google-logo {
+    width: calc(1rem + 6px);
+    background-image: $google-logo;
+  }
+
   & .facebook-logo {
+    width: 1rem;
     background-image: $facebook-logo;
   }
 

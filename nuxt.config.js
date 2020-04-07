@@ -44,7 +44,7 @@ export default {
     { src: '~plugins/buefy.js', ssr: false },
     { src: '~plugins/veeValidate.js', ssr: false },
     { src: '~plugins/vueGlobalEvents.js', ssr: false },
-    { src: '~plugins/vueMaterial.js', ssr: false },
+    // { src: '~plugins/vueMaterial.js', ssr: false },
     { src: '~plugins/vClickOutside.js', ssr: false }
   ],
   /*
@@ -108,7 +108,7 @@ export default {
    */
   webfontloader: {
     google: {
-      families: ['Roboto:300, 300i,400,500,600,700&display=swap']
+      families: ['Nunito+Sans:300, 300i,400,500,600,700&display=swap']
     }
   },
   /*
