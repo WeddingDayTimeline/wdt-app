@@ -1,0 +1,82 @@
+// FOR LARGE WIDTH BUTTONS.
+.full-width-button {
+  width: 100%;
+  max-width: 200px;
+}
+
+// FOR MEDIUM WIDTH BUTTONS.
+.med-width-button {
+  width: 50%;
+  max-width: 6rem;
+}
+
+// FOR REGULAR WIDTH BUTTONS. USE THIS CLASS INSTEAD OF VUESAX DEFAULT.
+.reg-width-button {
+  padding: 10px 12px;
+}
+
+// MINI CHECKBOX ADDITION.
+.check-mini .vs-checkbox {
+  width: 1rem;
+  height: 1rem;
+}
+
+.check-mini .vs-icon {
+  font-size: 0.8rem;
+}
+
+// MOD FOR SMALL SIZE BUTTON - MEANT FOR MINI-SIZED NUMBERED CIRCLES
+.mini-number-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin: 0 1rem 0 0;
+  padding: 10px !important;
+}
+
+// PROGRESS BAR BACKGROUND TO TRANSPARENT
+.vs-progress-primary {
+  background: #fff0 !important;
+}
+
+// ALT SIGN-IN BUTTON AS BUEFY BUTTON
+.alt-signin-btn {
+  color: material-color('blue-grey', '600');
+
+  & > span {
+    display: flex;
+    align-items: center;
+  }
+
+  & .alt-logo {
+    display: inline-block;
+    width: calc(1rem + 6px);
+    height: calc(1rem + 6px);
+    margin: 0 0.5rem 0 0;
+    background-image: $google-logo;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 50%;
+  }
+
+  & .google-logo {
+    background-image: $google-logo;
+    border: 3px solid transparent;
+  }
+
+  & .facebook-logo {
+    background-image: $facebook-logo;
+  }
+
+  &.isActive .google-logo {
+    background-color: $white;
+    border: 3px solid $white;
+  }
+}
+
+// CHANGE FONT-AWESOME ICON SIZES
+.icon .fa-lg {
+  font-size: 1.2em !important;
+}

@@ -2,11 +2,13 @@
 
 //? BEGIN VARIABLES
 
-$google: #4285F4;
+$google: #4285f4;
+$facebook: #1977f3;
 
 // Setup $colors to use as bulma classes (e.g. 'is-twitter')
 $colors: (
-    "google": ($google, $white)
+  "google": ($google, $white),
+  "facebook": ($facebook, $white)
 );
 
 //? END VARIABLES
@@ -14,10 +16,14 @@ $colors: (
 //? BEGIN CLASSES
 
 .card {
-    border-radius: .2rem;
+  border-radius: 0.2rem;
 }
 
 //? END CLASSES
+
+//? BEGIN FIXES
+
+//? END FIXES
 
 // Import Bulma and Buefy styles
 @import "~bulma";

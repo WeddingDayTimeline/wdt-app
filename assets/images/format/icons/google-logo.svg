@@ -4,10 +4,14 @@
 	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 17.6 18"
 	 style="enable-background:new 0 0 17.6 18;" xml:space="preserve">
 <style type="text/css">
-	.st0{fill-rule:evenodd;clip-rule:evenodd;fill:#4285F4;}
+	<!-- .st0{fill-rule:evenodd;clip-rule:evenodd;fill:#4285F4;}
 	.st1{fill-rule:evenodd;clip-rule:evenodd;fill:#34A853;}
 	.st2{fill-rule:evenodd;clip-rule:evenodd;fill:#FBBC05;}
-	.st3{fill-rule:evenodd;clip-rule:evenodd;fill:#EA4335;}
+	.st3{fill-rule:evenodd;clip-rule:evenodd;fill:#EA4335;} -->
+	.st0{fill-rule:evenodd;clip-rule:evenodd;fill:#FFF;}
+	.st1{fill-rule:evenodd;clip-rule:evenodd;fill:#FFF;}
+	.st2{fill-rule:evenodd;clip-rule:evenodd;fill:#FFF;}
+	.st3{fill-rule:evenodd;clip-rule:evenodd;fill:#FFF;}
 </style>
 <title>btn_google_light_normal_ios</title>
 <desc>Created with Sketch.</desc>

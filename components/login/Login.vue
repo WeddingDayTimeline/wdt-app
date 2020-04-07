@@ -1,23 +1,22 @@
 <template>
   <div id="login-card-wrapper">
-    <vs-progress
+    <b-progress
       v-if="Loading || status.thinking"
-      class="progress"
-      indeterminate
-      :height="3"
-      color="primary"
+      class="progress-xs"
+      type="is-info"
+      size="is-small"
     />
     <div id="auth-card" class="card">
       <header id="auth-card-header" class="card-header">
         <b-message :active="ReauthQuery">
           Please confirm your password to continue.
         </b-message>
-        <p
+        <h2
           v-if="!ReauthQuery"
           class="card-header-title"
         >
           {{ ForgotMode ? 'Reset Password' : HeaderCopy }}
-        </p>
+        </h2>
       </header>
       <div id="logo-cont">
         <div id="logo">
@@ -32,23 +31,27 @@
               v-if="!PrimaryAuthChoice"
               id="primary-signin-choice"
             >
-              <span>{{ `Sign ${SignInMode ? 'in' : 'up'} with:` }}</span><br>
-              <b-button
-                type="is-primary"
-                outlined
-                :disabled="status.submitBtnDisabled || status.disableFields"
-                @click="SetPrimarySignIn('email')"
-              >
-                Email
-              </b-button>
-              <b-button
-                type="is-primary"
-                outlined
-                :disabled="status.submitBtnDisabled || status.disableFields"
-                @click="SetPrimarySignIn('phone')"
-              >
-                Phone
-              </b-button>
+              <h4>{{ `Sign ${SignInMode ? 'in' : 'up'} with:` }}</h4>
+              <div class="primary-signin-choice-inner">
+                <b-button
+                  class="signin-choice-left"
+                  type="is-primary"
+                  outlined
+                  :disabled="status.submitBtnDisabled || status.disableFields"
+                  @click="SetPrimarySignIn('email')"
+                >
+                  Email
+                </b-button>
+                <b-button
+                  class="signin-choice-right"
+                  type="is-primary"
+                  outlined
+                  :disabled="status.submitBtnDisabled || status.disableFields"
+                  @click="SetPrimarySignIn('phone')"
+                >
+                  Phone
+                </b-button>
+              </div>
             </div>
             <!-- Primary sign-in choice end -->
             <!-- Primary sign-in email start -->
@@ -59,11 +62,6 @@
               <div
                 id="input-cont-top"
               >
-                <a
-                  class="alt-primary-signinup"
-                  :class="status.error.active || ForgotMode ? 'no-click hide' : ''"
-                  @click="SetPrimarySignIn(null)"
-                >Try another sign-in method</a>
                 <validation-provider
                   class="input-validation-provider"
                   rules="email"
@@ -73,7 +71,7 @@
                 >
                   <b-field :message="errors[0]">
                     <b-input
-                      class="input"
+                      class="input-class"
                       icon="envelope"
                       :placeholder="SignInMode ? 'Email' : 'Choose an email'"
                       type="email"
@@ -98,7 +96,7 @@
                 <div v-if="!SignInMode" class="first-last-name">
                   <b-field>
                     <b-input
-                      class="input"
+                      class="input-class"
                       :placeholder="SignInMode ? 'First name' : 'Your first name'"
                       type="text"
                       :readonly="status.disableFields || ReauthQuery"
@@ -107,7 +105,7 @@
                   </b-field>
                   <b-field>
                     <b-input
-                      class="input"
+                      class="input-class"
                       :placeholder="SignInMode ? 'Last name' : 'Your last name'"
                       type="text"
                       :readonly="status.disableFields || ReauthQuery"
@@ -125,7 +123,7 @@
                   <b-field :message="errors[0]">
                     <b-input
                       :class="ForgotMode ? 'no-click hide' : ''"
-                      class="input"
+                      class="input-class"
                       icon="unlock-alt"
                       :placeholder="SignInMode ? 'Password' : 'Create a password'"
                       type="password"
@@ -135,11 +133,13 @@
                     />
                   </b-field>
                 </validation-provider>
-                <a
-                  class="forgot forgot-password"
-                  :class="!SignInMode || status.error.active || ForgotMode ? 'no-click hide' : ''"
-                  @click="ForgotPassword"
-                >Forgot password?</a>
+                <div class="fotgot-password-cont">
+                  <a
+                    class="forgot forgot-password"
+                    :class="!SignInMode || status.error.active || ForgotMode ? 'no-click hide' : ''"
+                    @click="ForgotPassword"
+                  >Forgot password?</a>
+                </div>
               </div>
             </div>
             <!-- Primary sign-in email end -->
@@ -152,7 +152,9 @@
                 v-if="!status.enterVerificationCode"
                 id="input-cont-top"
               >
-                <span class="phone-plus">+ </span>
+                <div class="phone-plus">
+                  <span>+</span>
+                </div>
                 <!-- Country code start -->
                 <validation-provider
                   class="input-validation-provider country-code-provider"
@@ -163,7 +165,7 @@
                 >
                   <b-field :message="errors[0]">
                     <b-input
-                      class="input country-code"
+                      class="input-class country-code"
                       :placeholder="SignInMode ? 'Email' : 'Choose an email'"
                       type="text"
                       :readonly="status.disableFields || ReauthQuery"
@@ -182,7 +184,7 @@
                 >
                   <b-field :message="errors[0]">
                     <b-input
-                      class="input"
+                      class="input-class"
                       :placeholder="SignInMode ? 'Phone number' : 'Choose a phone number'"
                       type="tel"
                       autofocus="true"
@@ -193,16 +195,11 @@
                 </validation-provider>
                 <br />
                 <!-- Area code & phone number end -->
-                <a
-                  class="alt-primary-signinup"
-                  :class="status.error.active || ForgotMode ? 'no-click hide' : ''"
-                  @click="SetPrimarySignIn(null)"
-                >Choose another sign-in method</a>
                 <!-- First/Last name start -->
                 <div v-if="!SignInMode" class="first-last-name">
                   <b-field>
                     <b-input
-                      class="input"
+                      class="input-class"
                       :placeholder="SignInMode ? 'First name' : 'Your first name'"
                       type="text"
                       :readonly="status.disableFields || ReauthQuery"
@@ -211,7 +208,7 @@
                   </b-field>
                   <b-field>
                     <b-input
-                      class="input"
+                      class="input-class"
                       :placeholder="SignInMode ? 'Last name' : 'Your last name'"
                       type="text"
                       :readonly="status.disableFields || ReauthQuery"
@@ -235,7 +232,7 @@
                 >
                   <b-field :message="errors[0]">
                     <b-input
-                      class="input"
+                      class="input-class"
                       placeholder="eg. 836545"
                       type="text"
                       autofocus="true"
@@ -261,7 +258,7 @@
               v-if="SignInMode && PrimaryAuthChoice && !status.enterVerificationCode && !ForgotMode"
               id="sign-in-btn"
               class="submit-btn full-width-button"
-              :class="status.submitBtnColor === 'is-success' ? 'no-click' : ''"
+              :class="[status.submitBtnColor === 'is-success' ? 'no-click' : '', PrimaryAuthChoice === 'phone' ? 'send-code' : '']"
               :type="status.submitBtnColor"
               :icon-left="status.submitBtnColor === 'is-success' ? 'check' : ''"
               :disabled="status.submitBtnDisabled"
@@ -279,13 +276,27 @@
             <b-button
               v-if="!SignInMode && PrimaryAuthChoice && !status.enterVerificationCode && !ForgotMode"
               id="sign-in-btn"
-              class="submit-btn full-width-button"
+              class="submit-btn create-account full-width-button"
               :class="status.submitBtnColor === 'is-success' ? 'no-click' : ''"
               :type="status.submitBtnColor"
+              expanded
               :icon-left="status.submitBtnColor === 'is-success' ? 'check' : ''"
               :disabled="status.submitBtnDisabled"
               @click="PrimaryAuthChoice === 'email' ? SignUpWithEmail() : SignUpWithPhone()"
             >{{ status.submitBtnColor === 'is-success' ? '' : 'Create Account' }}</b-button>
+            <b-button
+              v-if="PrimaryAuthChoice && !status.enterVerificationCode && !ForgotMode"
+              id="try-another-method"
+              class="go-back-btn full-width-button"
+              type="is-info"
+              icon-left="long-arrow-alt-left"
+              expanded
+              outlined
+              :disabled="status.submitBtnDisabled"
+              @click="SetPrimarySignIn(null)"
+            >
+              Go Back
+            </b-button>
             <b-button
               v-if="ForgotMode"
               class="submit-btn full-width-button"
@@ -296,7 +307,7 @@
               @click="ResetPassword"
             >{{ status.submitBtnColor !== 'is-success' ? 'Reset Password' : 'Email Sent' }}</b-button>
           </div>
-          <div v-if="!ForgotMode" id="google-option-cont">
+          <div v-if="!ForgotMode && !PrimaryAuthChoice" id="alt-signin-cont">
             <div class="or-cont">
               <hr />
               <span class="or">or</span>
@@ -304,27 +315,28 @@
             </div>
             <!-- Google sign-in button start -->
             <b-button
-              class="google-signin-btn full-width-button"
+              class="alt-signin-btn"
               type="is-google"
-              inverted
+              expanded
               :disabled="status.submitBtnDisabled"
               @click="signInWithGoogle"
             >
-              <div class="google-logo" />Sign in with Google
+              <div class="alt-logo google-logo" />Sign in with Google
             </b-button>
             <!-- Google sign-in button end -->
             <!-- Facebook sign-in button start -->
             <b-button
-              class="google-signin-btn full-width-button"
-              type="is-google"
-              inverted
+              class="alt-signin-btn"
+              type="is-facebook"
+              expanded
               :disabled="status.submitBtnDisabled"
               @click="signUpInWithFacebook({method: SignInMode ? 'signIn' : 'signUp'})"
             >
-              Sign in with Facebook
+              <div class="alt-logo facebook-logo" />Sign in with Facebook
             </b-button>
             <!-- Facebook sign-in button end -->
           </div>
+          <!-- Bottom start -->
           <div
             v-if="!ReauthQuery || (ReauthQuery && ForgotMode)"
             id="bottom"
@@ -341,6 +353,7 @@
               <a class="primary" @click="SignUpMode('signIn')">Sign in</a>
             </div>
           </div>
+          <!-- Bottom end -->
         </validation-observer>
       </div>
     </div>
@@ -646,18 +659,10 @@ export default {
 </script>
 
 <style scoped lang="scss">
-// #login-card-wrapper {
-//   width: 100%;
-//   height: 100vh;
-//   display: flex;
-//   flex-direction: column;
-//   align-items: center;
-//   justify-content: center;
-// }
 
-.progress {
-  width: calc(22rem - 0.5rem);
-  margin-bottom: -3px;
+.progress-xs {
+  height: 0.5rem;
+  margin-bottom: -0.25rem;
 }
 
 #auth-card-header {
@@ -675,16 +680,18 @@ export default {
 .error {
   max-width: 220px;
   height: min-content !important;
+
+  & * {
+    line-height: 1.333rem;
+  }
 }
 
-.error * {
-  line-height: 1.333rem;
-}
-
-.loading #auth-card-header,
-.loading #input-cont,
-.loading #input-cont * {
-  opacity: 0;
+.loading {
+  & #auth-card-header,
+  & #input-cont,
+  & #input-cont * {
+    opacity: 0;
+  }
 }
 
 .mostly-hidden {
@@ -698,10 +705,6 @@ export default {
   max-width: 100%;
   height: auto;
   min-height: 16rem;
-}
-
-::v-deep .vs-card--content {
-  height: calc(100% - 38.4px); // 38.4px is header height and is consistent.
 }
 
 #new-user-screen-cont {
@@ -721,25 +724,65 @@ export default {
   cursor: default;
 }
 
-.input,
+#primary-signin-choice {
+  width: 100%;
+
+  & .primary-signin-choice-inner {
+    display: flex;
+  }
+
+  & .button {
+    flex: 1;
+  }
+
+  & .signin-choice-left {
+    margin-right: -1px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  & .signin-choice-right {
+    // margin-left: -1px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+}
+
+.input-class,
 .input-validation-provider {
   margin-bottom: 1rem;
 }
 
+.phone-plus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.25rem;
+  margin-right: 0.25rem;
+  color: material-color('blue-grey', '400');
+}
+
 .phone-plus,
-.input-validation-provider.country-code-provider {
+.country-code-provider {
   float: left;
 }
 
-.input-validation-provider.phone-number-provider {
+.phone-number-provider {
   float: right;
 }
 
-.input.country-code {
+.country-code-provider,
+.phone-number-provider {
+  margin-bottom: 0;
+}
+
+::v-deep .input-class.country-code {
   width: 3rem;
+  margin-right: 0.5rem;
 
   & input {
     width: 100%;
+    text-align: center;
   }
 }
 
@@ -753,9 +796,14 @@ export default {
   cursor: pointer;
 }
 
+.fotgot-password-cont {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
 .forgot-password,
 .alt-primary-signinup {
-  align-self: flex-end;
   margin-top: -0.5rem;
   color: $primary;
 }
@@ -767,59 +815,77 @@ export default {
 
 .submit-btn {
   margin: 2.5rem 0 0.5rem;
+
+  &.create-account,
+  &.send-code {
+    margin: 1rem 0 0.5rem;
+  }
 }
 
-#google-option-cont {
+.go-back-btn {
+  margin: 0 0 0.5rem;
+}
+
+#alt-signin-cont {
   display: flex;
   flex-direction: column;
+  align-items: center;
   width: auto;
-  margin: 1.2rem 0 0;
-}
 
-#google-option-cont .or-cont {
-  display: flex;
-  width: 200px;
-  margin: 0 0 0.333rem;
-}
+  & .or-cont {
+    display: flex;
+    align-items: center;
+    width: 200px;
+    margin: 0.25rem 0 1.75rem;
+  }
 
-#google-option-cont hr {
-  flex: 1;
-  background-color: transparent;
-  border-bottom: 1px solid material-color('blue-grey', '100');
-  border-top: none;
-  border-right: none;
-  border-left: none;
-}
+  & hr {
+    flex: 1;
+    background-color: transparent;
+    border-bottom: 1px solid material-color('blue-grey', '100');
+    border-top: none;
+    border-right: none;
+    border-left: none;
+  }
 
-#google-option-cont .or {
-  margin: -0.5rem 0.666rem 0;
-  color: material-color('blue-grey', '200');
-  cursor: default;
+  & .or {
+    margin: 0 0.666rem;
+    color: material-color('blue-grey', '200');
+    cursor: default;
+  }
+
+  & button:not(:last-child) {
+    margin-bottom: 0.5rem;
+  }
 }
 
 #bottom {
   margin-top: 4rem;
   color: material-color('blue-grey', '300');
   cursor: default;
-}
 
-#bottom.forgot {
-  margin-top: 0.5rem;
-}
+  & #bottom-inner {
+    text-align: center;
+  }
 
-#bottom a {
-  margin: 0 0 0 0.2rem;
-  color: material-color('blue-grey', '300');
-  cursor: pointer;
-}
+  & .forgot {
+    margin-top: 0.5rem;
+  }
 
-#bottom a:hover {
-  color: $primary;
-}
+  & a {
+    margin: 0 0 0 0.2rem;
+    color: material-color('blue-grey', '300');
+    cursor: pointer;
 
-#bottom a.primary,
-.error span {
-  color: $primary;
+    &:hover {
+      color: $primary;
+    }
+
+    &.primary,
+    .error span {
+      color: $primary;
+    }
+  }
 }
 
 .reset-instructions {

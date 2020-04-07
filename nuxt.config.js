@@ -41,8 +41,8 @@ export default {
     // { src: '~plugins/axiosInterceptors.js', ssr: false },    // KEEP FOR AXIOS CALL DEBUGGING
     { src: '~plugins/server.js', ssr: false },
     { src: '~plugins/client.js', ssr: false },
+    { src: '~plugins/buefy.js', ssr: false },
     { src: '~plugins/veeValidate.js', ssr: false },
-    { src: '~plugins/vuesax.js', ssr: false },
     { src: '~plugins/vueGlobalEvents.js', ssr: false },
     { src: '~plugins/vueMaterial.js', ssr: false },
     { src: '~plugins/vClickOutside.js', ssr: false }
@@ -62,7 +62,7 @@ export default {
     '@nuxtjs/dotenv',
     '@nuxtjs/style-resources',
     'nuxt-webfontloader',
-    'nuxt-buefy',
+    // 'nuxt-buefy',
     'nuxt-fontawesome'
   ],
   /*
@@ -110,14 +110,6 @@ export default {
     google: {
       families: ['Roboto:300, 300i,400,500,600,700&display=swap']
     }
-  },
-  /*
-   ** Buefy
-   */
-  buefy: {
-    materialDesignIcons: false,
-    defaultIconPack: 'fas',
-    defaultIconComponent: 'font-awesome-icon'
   },
   /*
    ** Fontawesome

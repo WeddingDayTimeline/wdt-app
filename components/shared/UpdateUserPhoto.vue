@@ -21,10 +21,10 @@
     </div>
     <div class="input-cont">
       <input id="file" type="file" hidden @change="UpdateProfilePhoto($event)" ref="File" />
-      <vs-progress
+      <b-progress
         v-if="PhotoUploadState === 'uploading'"
-        :percent="PhotoUploadProgress"
-        color="#cfd8dc"
+        :value="PhotoUploadProgress"
+        type="is-light"
       />
     </div>
     <b-message v-if="Error.Active" type="is-danger" size="is-small" has-icon>{{ Error.Text }}</b-message>
