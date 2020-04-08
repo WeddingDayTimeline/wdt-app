@@ -416,7 +416,7 @@ export default {
   grid-template-rows: 100%;
   align-items: center;
   // padding-left: 1.5rem;
-  border-bottom: 1px solid material-color('blue-grey', '50');
+  border-bottom: 1px solid $grey-lighter;
 }
 
 #log-out-cont {
@@ -441,12 +441,12 @@ export default {
 
 #log-out-inner,
 #profile-settings-inner {
-  color: material-color('blue-grey', '600');
+  color: $grey;
 }
 
 .log-out-icon,
 .profile-settings-icon {
-  color: material-color('blue-grey', '200') !important;
+  color: $grey-lighter !important;
 }
 </style>
 

@@ -263,7 +263,7 @@ export default {
   flex-direction: column;
   align-items: center;
   font-size: 1rem;
-  color: material-color('blue-grey', '600');
+  color: $grey;
 }
 
 .main-icon {
@@ -283,7 +283,7 @@ export default {
 
 .skip {
   padding-top: 0.333rem;
-  color: material-color('blue-grey', '300');
+  color: $grey;
 }
 
 .uploaded-img {

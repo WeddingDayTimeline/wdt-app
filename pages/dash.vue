@@ -196,7 +196,7 @@ main {
 }
 
 #header-right .notif-icon {
-  color: material-color('blue-grey', '200');
+  color: $grey;
   pointer-events: none;
 }
 
@@ -217,20 +217,20 @@ main {
 }
 
 .user-avatar-cont img {
-  background-color: material-color('blue-grey', '200');
+  background-color: $grey;
 }
 
 .user-avatar {
   font-size: 2.375rem !important; // ACTUAL SIZE COMES OUT TO 2 REM
-  color: material-color('blue-grey', '200') !important;
-  background-color: material-color('blue-grey', '50');
+  color: $grey !important;
+  background-color: $grey-lighter;
 }
 
 .user-name-cont {
   display: flex;
   align-items: center;
   font-weight: 400;
-  color: material-color('blue-grey', '400');
+  color: $grey;
   pointer-events: none;
 }
 

@@ -715,7 +715,7 @@ export default {
 }
 
 #auth-card-header {
-  color: material-color('blue-grey', '300');
+  color: $grey;
   cursor: default;
 }
 
@@ -819,7 +819,7 @@ export default {
   justify-content: center;
   height: 2.25rem;
   margin-right: 0.25rem;
-  color: material-color('blue-grey', '400');
+  color: $grey-light;
 }
 
 .phone-plus,
@@ -848,7 +848,7 @@ export default {
 
 .check.remember-me {
   align-self: flex-start;
-  color: material-color('blue-grey', '300');
+  color: $grey;
 }
 
 .forgot,
@@ -951,74 +951,16 @@ export default {
 
 .reset-instructions {
   max-width: 200px;
-  color: material-color('blue-grey', '500');
+  color: $grey-light;
 }
-
-.new-user-slide {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  width: 100%;
-  height: 100%;
-}
-
-.new-user-slide-main-icon {
-  margin: 2rem 0;
-}
-
-.new-user-slide-text {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-size: 1rem;
-  color: material-color('blue-grey', '600');
-}
-
-#new-user-slide-1 .new-user-slide-text {
-  flex: 1;
-  justify-content: center;
-  padding-top: 3rem;
-}
-
-.new-user-slide-input {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-}
-
-.new-user-slide-btn-cont {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 3rem;
-}
-
-// #new-user-slide-2 .new-user-slide-btn-cont {
-//     justify-content: space-around;
-// }
 
 .skip {
   padding-top: 0.333rem;
-  color: material-color('blue-grey', '300');
-}
-
-// .uploaded-img {
-//   width: 5rem;
-//   height: 5rem;
-//   margin: 3rem 0;
-//   border-radius: 6px;
-// }
-
-.next-steps {
-  margin-left: 2.25rem;
-  color: material-color('blue-grey', '400');
-}
-
-::v-deep .mini-number-icon i {
-  margin-right: 0 !important;
+  color: $grey;
 }
 
 .light-text {
-  color: material-color('blue-grey', '200');
+  color: $grey-lighter;
   font-style: italic;
 }
 

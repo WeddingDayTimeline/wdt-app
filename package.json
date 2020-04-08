@@ -73,7 +73,6 @@
     "require-extension-hooks": "^0.3.3",
     "require-extension-hooks-babel": "^1.0.0",
     "require-extension-hooks-vue": "^2.0.0",
-    "sass-material-colors": "^0.0.5",
     "stylelint": "^13.2.0",
     "stylelint-config-standard": "^20.0.0"
   }

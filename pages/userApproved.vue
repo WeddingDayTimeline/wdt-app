@@ -148,7 +148,7 @@ export default {
 
 .bold {
   font-weight: 500;
-  color: material-color('blue-grey', '400');
+  color: $grey;
 }
 </style>
 

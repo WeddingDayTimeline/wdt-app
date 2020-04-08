@@ -1,31 +1,28 @@
 // UTILITY CLASSES
 .no-click {
-    pointer-events: none !important;
-    cursor: default;
+  pointer-events: none !important;
+  cursor: default;
 }
 
 .hide {
-    color: #fff0 !important;
-    opacity: 0 !important;
+  color: #fff0 !important;
+  opacity: 0 !important;
 }
 
 .float-left {
-    float: left;
+  float: left;
 }
 
 .float-right {
-    float: right;
+  float: right;
 }
-
 
 // FLEXBOX
 .flex-1 {
-    flex: 1;
+  flex: 1;
 }
-
 
 // STYLE CHANGE DURING HTML INPUT ELEMENTS' READONLY STATE
 input:read-only {
-    background-color: material-color('blue-grey', '50');
-    color: material-color('blue-grey', '400');
+  background-color: $grey-lighter;
 }

@@ -11024,11 +11024,6 @@ sass-loader@^8.0.2:
     schema-utils "^2.6.1"
     semver "^6.3.0"
 
-sass-material-colors@^0.0.5:
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/sass-material-colors/-/sass-material-colors-0.0.5.tgz#b944539236c94e2d4ece35d2ee3fa22f10b2ed43"
-  integrity sha1-uURTkjbJTi1OzjXS7j+iLxCy7UM=
-
 sass-resources-loader@^2.0.0:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/sass-resources-loader/-/sass-resources-loader-2.0.1.tgz#c8427f3760bf7992f24f27d3889a1c797e971d3a"
