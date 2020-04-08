@@ -1,10 +1,10 @@
 steps:
 # Build the container image
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'gcr.io/wedding-day-timeline/wdt-app-image:$COMMIT_SHA', '.']
+  args: ['build', '-t', 'gcr.io/trim-glazing-273418/wdt-app-image:$COMMIT_SHA', '.']
 # Push the image to Container Registry
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'gcr.io/wedding-day-timeline/wdt-app-image:$COMMIT_SHA']
+  args: ['push', 'gcr.io/trim-glazing-273418/wdt-app-image:$COMMIT_SHA']
 # Deploy image to Cloud Run
 - name: 'gcr.io/cloud-builders/gcloud'
   args:
@@ -12,11 +12,11 @@ steps:
   - 'deploy'
   - 'wdt-app-service'
   - '--image'
-  - 'gcr.io/wedding-day-timeline/wdt-app-image:$COMMIT_SHA'
+  - 'gcr.io/trim-glazing-273418/wdt-app-image:$COMMIT_SHA'
   - '--region'
   - 'us-central1'
   - '--platform'
   - 'managed'
   - '--allow-unauthenticated'
 images:
-- gcr.io/wedding-day-timeline/wdt-app-image
+- gcr.io/trim-glazing-273418/wdt-app-image
