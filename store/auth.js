@@ -245,7 +245,7 @@ export const actions = {
     firebase.auth().signInWithRedirect(provider)
   },
 
-  async signUpInWithFacebook({ commit, dispatch }, params) {
+  async signUpInWithFacebook({ commit, dispatch }, method) {
     let vm = this
     commit('GENERAL_REQUEST')
     try {
@@ -253,17 +253,22 @@ export const actions = {
       const provider = new firebase.auth.FacebookAuthProvider()
       firebase.auth().useDeviceLanguage()
       const signedIn = await firebase.auth().signInWithPopup(provider)
+      console.log('signedIn:', signedIn)
       if (signedIn) {
-        console.log('signIn:', signedIn)
         console.log('vm:', vm)
-        if (params.method === 'signUp') {
+        console.log('method:', method)
+        if (method === 'signUp') {
           vm.app.context.redirect('/dash')
         } else {
-          const user = firebase.auth().currentUser
-          console.log('method is SignIn')
-          const account = await this.$server.doesAccountExist({ method: 'facebook', login: deep(user.uid) })
-          console.log('account:', account)
-          if (account && account.data.exists) {
+          // const user = firebase.auth().currentUser
+          // console.log('method is SignIn')
+          // const account = await this.$server.doesAccountExist({ provider: 'facebook.com', login: deep(user.uid) })
+          // console.log('account:', account)
+          // TODO: USE NEW DATABASE ENTRY UPON SIGNING *UP* THAT ALLOWS ACCESS AFTER SIGNING IN WITH FACEBOOK ACCOUNT.
+          // TODO: THE DIFFERENCE HERE IS INSTEAD OF GRANTING ACCESS WITH A SUCCESSFULL FIREBASE LOGIN, WE'RE GRANTING ACCESS AFTER ANOTHER DATABASE CHECK,
+          // TODO: TO MAKE SURE USER HAS USED THE SIGNED UP METHOD BEFORE SIGNING IN.
+          // TODO: THIS ALSO MEANS THIS NEW DATABASE ENTRY THAT ALLOWS ENTRY IS DELETED / MADE FALSE -- UPON REMOVING AN ACCOUNT (IN FUTURE)
+          if (!signedIn.additionalUserInfo.isNewUser) {
             vm.app.context.redirect('/dash')
           } else {
             const errorStatus = {
@@ -276,6 +281,7 @@ export const actions = {
         }
       }
     } catch (error) {
+      console.log('error:', error)
       const errorStatus = {
         active: true,
         type: 0,

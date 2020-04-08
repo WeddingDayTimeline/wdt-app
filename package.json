@@ -1,8 +1,8 @@
 {
-  "name": "dig-hub",
+  "name": "wdt-app",
   "version": "1.0.0",
-  "description": "DIG Hub",
-  "author": "Dolan Internet Group LLC",
+  "description": "Wedding Day Timeline",
+  "author": "Wedding Day Timeline",
   "private": true,
   "scripts": {
     "dev": "nuxt",

@@ -189,7 +189,7 @@ import { mapGetters, mapActions } from 'vuex'
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
 import { ValidationProvider, ValidationObserver } from 'vee-validate'
-import hubConfig from '~/hubConfig.js'
+import appConfig from '~/appConfig.js'
 import UpdateUserPhoto from '~/components/shared/UpdateUserPhoto.vue'
 
 export default {
@@ -294,7 +294,7 @@ export default {
 
             setTimeout(() => {
               vm.Editing = ''
-            }, hubConfig.ux.completionDelay.long)
+            }, appConfig.ux.completionDelay.long)
           }
         } catch (error) {
           // UPDATE UI
@@ -329,7 +329,7 @@ export default {
 
             setTimeout(() => {
               vm.Editing = ''
-            }, hubConfig.ux.completionDelay.long)
+            }, appConfig.ux.completionDelay.long)
           }
         } catch (error) {
           if (error.code === 'auth/requires-recent-login') {
@@ -377,7 +377,7 @@ export default {
 
               setTimeout(() => {
                 vm.Editing = ''
-              }, hubConfig.ux.completionDelay.long)
+              }, appConfig.ux.completionDelay.long)
             }
           }
         } catch (error) {

@@ -333,7 +333,7 @@
                   type="is-teal"
                   expanded
                   :disabled="status.submitBtnDisabled"
-                  @click="signUpInWithFacebook({method: SignInMode ? 'signIn' : 'signUp'})"
+                  @click="signUpInWithFacebook(SignInMode ? 'signIn' : 'signUp')"
                 >
                   <div class="alt-logo facebook-logo" />Sign in with Facebook
                 </b-button>
@@ -350,19 +350,19 @@
         >
           <div v-if="!PasswordResetEmailSent && !status.justSignedUp" id="bottom-inner">
             <div class="bottom-question">
-              {{ BottomCopy.One }}
+              {{ BottomCopy.Question }}
             </div>
             <!-- <a
               :class="SignInMode ? '' : 'primary'"
               @click="SignUpMode()"
-            >{{ BottomCopy.Two }}</a> -->
+            >{{ BottomCopy.Btn }}</a> -->
             <b-button
               type="is-teal"
               outlined
               :disabled="status.submitBtnDisabled"
               @click="SignUpMode()"
             >
-              {{ BottomCopy.Two }}
+              {{ BottomCopy.Btn }}
             </b-button>
           </div>
           <div v-else id="bottom-inner">
@@ -433,11 +433,11 @@ export default {
     },
     BottomCopy() {
       if (this.ReauthQuery) {
-        return { One: '', Two: 'Back' }
+        return { Question: '', Btn: 'Back' }
       } else if (this.SignInMode) {
-        return { One: 'Need an account? ', Two: 'Sign up' }
+        return { Question: 'Need an account? ', Btn: 'Sign up' }
       } else {
-        return { One: 'Have an account? ', Two: 'Sign in' }
+        return { Question: 'Have an account? ', Btn: 'Sign in' }
       }
     }
   },
@@ -645,7 +645,7 @@ export default {
                 vm.CheckIfVerified(user.email)
               } else if (provider === 'phone' && vm.status.recaptchaPassed > 0) {
                 vm.$root.context.redirect('/dash')
-              } else if (provider === 'facebook' && !this.SignInMode) {
+              } else if (provider === 'facebook.com' && !this.SignInMode) {
                 // vm.$root.context.redirect('/dash')
               }
             }

@@ -6,7 +6,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import hubConfig from '~/hubConfig.js'
+import appConfig from '~/appConfig.js'
 
 export default {
   name: 'NavRightUser',

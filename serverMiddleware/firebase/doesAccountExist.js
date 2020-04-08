@@ -8,19 +8,23 @@ export const doesAccountExist = async (req, res) => {
   initializeApp()
 
   try {
-    const provider = req.query.userData.method
+    const userData = JSON.parse(req.query.userData)
+    console.log('userData:', userData)
+    const provider = userData.provider
+    const login = userData.login
     let user
     // CHECK TO SEE IF ACCOUNT EXISTS
     switch (provider) {
     case 'phone':
-      user = await admin.auth().getUserByPhoneNumber(req.query.userData.login)
+      user = await admin.auth().getUserByPhoneNumber(login)
       break
-    case 'facebook':
-      user = await admin.auth().getUser(req.query.userData.login)
+    case 'facebook.com':
+      user = await admin.auth().getUser(login)
       break
     }
 
     if (user) {
+      console.log('user:', user)
       res.send(deep({ exists: user.providerData[0].providerId === provider }))
     } else {
       res.send({ exists: false })

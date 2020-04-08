@@ -53,7 +53,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import * as firebase from 'firebase/app'
-import hubConfig from '~/hubConfig.js'
+import appConfig from '~/appConfig.js'
 import 'firebase/auth'
 import 'firebase/storage'
 
@@ -73,7 +73,7 @@ export default {
       PhotoUploadBtnState: { icon: 'cloud-upload-alt', color: 'is-primary' },
       UploadedPhotoURL: '',
       PhotoUploadProgress: 0,
-      FileSizeLimit: 3000000, // FALLBACK SET TO 3MB HERE, BUT DON'T CHANGE THIS NUMBER, CHANGE IT IN hubConfig.js
+      FileSizeLimit: 3000000, // FALLBACK SET TO 3MB HERE, BUT DON'T CHANGE THIS NUMBER, CHANGE IT IN appConfig.js
       Error: {
         Active: false,
         Type: 0,
@@ -206,7 +206,7 @@ export default {
                       if (vm.instance === 'CreateProfile') {
                         vm.$emit('photoUpdated')
                       }
-                    }, hubConfig.ux.completionDelay.short)
+                    }, appConfig.ux.completionDelay.short)
 
                     vm.PhotoUploadState = 'complete'
                     // UPDATE FIREBASE USER PROFILE WITH NEW photoURL
@@ -249,9 +249,9 @@ export default {
     }
   },
   created() {
-    // IMPORT FILE SIZE LIMIT FROM hubConfig.js
-    const digUser = hubConfig.user
-    this.FileSizeLimit = digUser.profilePhotoSizeLimit
+    // IMPORT FILE SIZE LIMIT FROM appConfig.js
+    const wdtUser = appConfig.user
+    this.FileSizeLimit = wdtUser.profilePhotoSizeLimit
     this.ResetErrorState()
   }
 }

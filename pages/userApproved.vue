@@ -52,15 +52,15 @@
           Internet Group for support.
           <br />
           <br />
-          <a :href="'mailto:' + HubConfig.dig.supportEmail">
+          <a :href="'mailto:' + appConfig.wdt.supportEmail">
             {{
-            HubConfig.dig.supportEmail
+            appConfig.wdt.supportEmail
             }}
           </a>
           <br />
-          <a :href="FormatPhone('link', HubConfig.dig.supportPhone)">
+          <a :href="FormatPhone('link', appConfig.wdt.supportPhone)">
             {{
-            FormatPhone('display', HubConfig.dig.supportPhone)
+            FormatPhone('display', appConfig.wdt.supportPhone)
             }}
           </a>
         </p>
@@ -73,7 +73,7 @@
 import { mapGetters } from 'vuex'
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
-import hubConfig from '~/hubConfig.js'
+import appConfig from '~/appConfig.js'
 import formatPhone from '~/utils/formatPhone.js'
 
 export default {
@@ -83,7 +83,7 @@ export default {
   data() {
     return {
       Loaded: false,
-      HubConfig: hubConfig,
+      appConfig: appConfig,
       FormatPhone: formatPhone
     }
   },

@@ -1,4 +1,4 @@
-import hubConfig from '~/hubConfig'
+import appConfig from '~/appConfig'
 
 export default $axios => ({
     updateProfile(uid, userData) {
@@ -7,7 +7,7 @@ export default $axios => ({
                     method: 'post',
                     url: '/serverMiddleware/firebase/updateProfile',
                     params: {
-                    app: hubConfig.api.appName
+                    app: appConfig.api.appName
                 },
                 data: {
                     uid: uid,
@@ -22,7 +22,7 @@ export default $axios => ({
                 method: 'get',
                 url: '/serverMiddleware/firebase/isEmailVerified',
                 params: {
-                    app: hubConfig.api.appName,
+                    app: appConfig.api.appName,
                     email: email
                 }
             })
@@ -34,7 +34,7 @@ export default $axios => ({
                 method: 'get',
                 url: '/serverMiddleware/firebase/doesAccountExist',
                 params: {
-                    app: hubConfig.api.appName,
+                    app: appConfig.api.appName,
                     userData: userData
                 }
             })

@@ -1,5 +1,5 @@
 export default {
-  dig: {
+  wdt: {
     supportEmail: 'brendan@pachira.site',
     supportPhone: '8086519158' // 10-digit string without formatting.
   },
@@ -8,7 +8,7 @@ export default {
     defaultAvatar: '~assets/images/format/default-avatar.svg'
   },
   api: {
-    appName: 'dig-hub'
+    appName: 'wdt-app'
   },
   ux: {
     completionDelay: {

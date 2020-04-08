@@ -1,6 +1,6 @@
-# dig-hub
+# wdt-app
 
-> DIG Hub
+> Wedding Day Timeline - Front End Nuxt App
 
 ## Build Setup
 
